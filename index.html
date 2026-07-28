@@ -1,33 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        h1 {
-            font-size: 3em;
-            color: #333;
-        }
-        img {
-            display: block;
-            margin: 20px auto 0;
-            border-radius: 8px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<meta name="description" content="FitForge — build workout routines and see how every exercise is done.">
+<title>FitForge — build your routine</title>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='19' font-size='20'>🏋️</text></svg>">
 </head>
 <body>
-    <h1>Hello World</h1>
-    <img src="https://picsum.photos/400/300" alt="Placeholder image" width="400" height="300">
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#home">
+        <span class="brand-mark" aria-hidden="true">FF</span>
+        <span class="brand-name">FitForge</span>
+      </a>
+      <nav id="nav" class="nav" aria-label="Main"></nav>
+    </header>
+
+    <main id="view" class="view"></main>
+
+    <footer class="footer">
+      <span>Saved in this browser only — nothing is uploaded.</span>
+      <a href="hello-world.html">hello world</a>
+    </footer>
+  </div>
+
+  <datalist id="category-list"></datalist>
+
+  <script src="assets/js/anim.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/media.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/exercises.js"></script>
+  <script src="assets/js/routines.js"></script>
+  <script src="assets/js/player.js"></script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
