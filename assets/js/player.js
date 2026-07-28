@@ -170,7 +170,7 @@
           }),
           step.exercise.notes ? el('p.player-notes', { text: step.exercise.notes }) : null,
           (!step.exercise.media || step.exercise.media.type === 'animation')
-            ? el('p.demo-cue', { text: Anim.get(Media.presetFor(step.exercise)).cue })
+            ? el('p.demo-cue', { text: Media.motionFor(step.exercise).cue })
             : null,
           nextIsNewExercise
             ? el('p.next-up', { text: 'Next: ' + upcoming.exercise.name })

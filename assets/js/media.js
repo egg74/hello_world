@@ -137,17 +137,25 @@
     return box;
   }
 
+  /* Returns whatever the renderer should play: a generated motion object if the
+   * exercise has one, otherwise a preset key. */
   function presetFor(exercise) {
     var m = exercise.media || {};
+    if (m.preset === 'custom' && m.custom) return Anim.fromSpec(m.custom);
     if (m.preset && m.preset !== 'auto') return m.preset;
     return Anim.detect(exercise.name);
+  }
+
+  /* The motion actually in use, resolved to an object either way. */
+  function motionFor(exercise) {
+    return Anim.get(presetFor(exercise));
   }
 
   function describe(exercise) {
     var m = exercise.media || {};
     if (!m.type || m.type === 'animation') {
-      var key = presetFor(exercise);
-      return 'Animated · ' + Anim.get(key).label;
+      var motion = motionFor(exercise);
+      return (motion.custom ? 'Custom animation · ' : 'Animated · ') + motion.label;
     }
     if (m.type === 'upload') return 'Uploaded file' + (m.title ? ' · ' + m.title : '');
     var info = classify(m.url);
@@ -185,6 +193,7 @@
     render: render,
     describe: describe,
     presetFor: presetFor,
+    motionFor: motionFor,
     stop: stop
   };
 })(window);

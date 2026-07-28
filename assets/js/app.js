@@ -179,6 +179,9 @@
       node.appendChild(list);
     }
 
+    node.appendChild(el('h2.section-title', { text: 'Custom animations' }));
+    node.appendChild(apiKeyPanel());
+
     node.appendChild(el('h2.section-title', { text: 'Your data' }));
     node.appendChild(el('div.settings', [
       el('p.panel-note', { text: 'Everything is stored in this browser only. Export a copy to move it to another device or keep a backup.' }),
@@ -200,6 +203,58 @@
         })
       ])
     ]));
+  }
+
+  /* Where the user connects a Claude API key, which is what unlocks animations
+   * generated for a specific exercise rather than matched from its name. */
+  function apiKeyPanel() {
+    var panel = el('div.settings');
+    var status = el('p.gen-status');
+    var input = el('input.input', {
+      type: 'password',
+      placeholder: 'sk-ant-…',
+      value: Coach.getKey(),
+      autocomplete: 'off',
+      spellcheck: 'false'
+    });
+
+    function save() {
+      var value = input.value.trim();
+      if (!Coach.setKey(value)) { status.textContent = 'Could not save the key to browser storage.'; return; }
+      if (!value) {
+        status.textContent = 'Key removed. Exercises will use stock motions.';
+        status.className = 'gen-status';
+        refresh();
+        return;
+      }
+      status.textContent = 'Checking the key…';
+      status.className = 'gen-status gen-working';
+      Coach.testKey(value).then(function () {
+        status.textContent = 'Key works. Custom animations are enabled.';
+        status.className = 'gen-status gen-ok';
+      }, function (err) {
+        status.textContent = err.message;
+        status.className = 'gen-status gen-error';
+      });
+    }
+
+    panel.appendChild(el('p.panel-note', {
+      text: 'Without a key, an exercise gets the stock motion whose name is closest — fine for a squat, wrong for anything unusual. With one, the app asks Claude how your exercise is actually performed, searching the web when it is not sure, and builds an animation for that movement.'
+    }));
+    panel.appendChild(UI.field('Claude API key', input,
+      'Stored in this browser only, and never included in a data export.'));
+    panel.appendChild(el('div.row', [
+      el('button.btn.btn-primary', { type: 'button', text: 'Save key', onclick: save }),
+      el('a.btn.btn-ghost', {
+        href: 'https://console.anthropic.com/settings/keys', target: '_blank', rel: 'noopener noreferrer',
+        text: 'Get a key'
+      })
+    ]));
+    panel.appendChild(status);
+    panel.appendChild(el('p.panel-note.panel-warn', {
+      text: 'Worth knowing: a key held in a browser is only as private as the device it is on, and anyone who can open this page can spend against it. Use a key created for this app alone, set a spend limit on it, and revoke it if the device is shared. Each animation is one request, costing a few cents at most.'
+    }));
+    return panel;
   }
 
   function historyRow(h) {
@@ -290,7 +345,15 @@
     });
   }
 
-  global.App = { init: init, go: go, refresh: refresh };
+  /* Key setup as a modal, so the exercise editor can send you here and back
+   * without losing the exercise you were halfway through writing. */
+  function openSettings(onClose) {
+    var m = UI.modal('Custom animations', apiKeyPanel(), el('div.row-end', [
+      el('button.btn.btn-primary', { type: 'button', text: 'Done', onclick: function () { m.close(); } })
+    ]), onClose);
+  }
+
+  global.App = { init: init, go: go, refresh: refresh, openSettings: openSettings };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

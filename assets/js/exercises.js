@@ -127,7 +127,10 @@
       media,
       el('p.demo-caption', { text: Media.describe(ex) }),
       (!ex.media || ex.media.type === 'animation')
-        ? el('p.demo-cue', { text: Anim.get(Media.presetFor(ex)).cue })
+        ? el('div', [
+            Media.motionFor(ex).howTo ? el('p.demo-howto', { text: Media.motionFor(ex).howTo }) : null,
+            el('p.demo-cue', { text: Media.motionFor(ex).cue })
+          ])
         : null,
       ex.notes ? el('p.demo-notes', { text: ex.notes }) : null,
       el('dl.spec', [
@@ -291,17 +294,25 @@
       else panel.appendChild(uploadPanel());
     }
 
-    /* 1. Generate — build the demo locally with the stick-figure engine. */
+    /* 1. Generate — build the demo with the stick-figure engine, either from a
+     * stock motion matched on the name, or a custom one worked out for this
+     * specific exercise. */
     function animationPanel() {
       var detected = Anim.detect(ex.name);
-      var presetOptions = [{ value: 'auto', label: 'Auto-detect from name (' + Anim.get(detected).label + ')' }]
-        .concat(Anim.list().map(function (m) { return { value: m.key, label: m.label }; }));
+      var presetOptions = [{ value: 'auto', label: 'Auto-detect from name (' + Anim.get(detected).label + ')' }];
+      if (media.custom) {
+        presetOptions.push({ value: 'custom', label: 'Custom · ' + media.custom.label });
+      }
+      presetOptions = presetOptions.concat(Anim.list().map(function (m) {
+        return { value: m.key, label: 'Stock · ' + m.label };
+      }));
 
       var presetSelect = UI.select(presetOptions, media.preset || 'auto', function (e) {
         media.type = 'animation';
         media.preset = e.target.value;
         refreshPreview();
         updateCue();
+        paintCustom();
       });
 
       var tempo = el('input.range', {
@@ -317,15 +328,112 @@
       var tempoLabel = el('span.field-hint', { text: (media.tempo || 2.4).toFixed(1) + 's per rep' });
       var cue = el('p.demo-cue');
       function updateCue() {
-        cue.textContent = Anim.get(media.preset && media.preset !== 'auto' ? media.preset : Anim.detect(ex.name)).cue;
+        cue.textContent = Media.motionFor(ex).cue;
       }
-      updateCue();
 
+      /* ---- custom generation -------------------------------------------- */
+
+      var custom = el('div.custom-block');
+      var status = el('p.gen-status');
+      var busy = false;
+
+      var describe = el('textarea.input', {
+        rows: 2,
+        placeholder: 'Optional: describe the movement in your own words, if it is unusual or you know it by a different name.',
+        oninput: function (e) { media.customNote = e.target.value; }
+      }, media.customNote || '');
+
+      function setStatus(text, kind) {
+        status.textContent = text || '';
+        status.className = 'gen-status' + (kind ? ' gen-' + kind : '');
+      }
+
+      function runGeneration() {
+        if (busy) return;
+        if (!ex.name.trim()) { UI.toast('Give the exercise a name first'); return; }
+        busy = true;
+        paintCustom();
+        Coach.generate(ex.name, media.customNote, function (msg) { setStatus(msg, 'working'); })
+          .then(function (result) {
+            media.type = 'animation';
+            media.custom = result.motion;
+            media.preset = 'custom';
+            media.tempo = result.motion.secondsPerRep;
+            busy = false;
+            paintPanel();
+            UI.toast(result.searched ? 'Custom animation built (looked it up)' : 'Custom animation built');
+          })
+          .catch(function (err) {
+            busy = false;
+            paintCustom();
+            setStatus(err.message, 'error');
+          });
+      }
+
+      function paintCustom() {
+        UI.clear(custom);
+
+        if (!Coach.hasKey()) {
+          custom.appendChild(el('div.custom-locked', [
+            el('p', { text: 'Stock motions only match on the exercise name, so an unusual movement gets the nearest lookalike rather than the real thing.' }),
+            el('p', { text: 'Connect a Claude API key and the app will work out how your exercise is actually performed — searching the web when it is not sure — and build an animation specifically for it.' }),
+            el('button.btn.btn-primary.btn-sm', {
+              type: 'button', text: 'Set up custom animations',
+              onclick: function () { App.openSettings(paintPanel); }
+            })
+          ]));
+          return;
+        }
+
+        custom.appendChild(el('div.custom-head', [
+          el('strong', { text: 'Custom animation' }),
+          media.custom ? el('span.badge.badge-quiet', { text: 'built for this exercise' }) : null
+        ]));
+
+        if (media.custom) {
+          var c = media.custom;
+          custom.appendChild(el('p.custom-howto', { text: c.howTo }));
+          if (c.confidence === 'low') {
+            custom.appendChild(el('p.gen-status.gen-warn', {
+              text: 'Claude was not confident it identified this exercise. Check the animation against how you actually perform it, and add a description below if it is wrong.'
+            }));
+          }
+        }
+
+        custom.appendChild(UI.field(
+          media.custom ? 'Refine the description and rebuild' : 'Describe the movement (optional)',
+          describe
+        ));
+
+        var row = el('div.row', [
+          el('button.btn.btn-primary.btn-sm', {
+            type: 'button', disabled: busy,
+            text: busy ? 'Working…' : (media.custom ? 'Rebuild animation' : 'Generate custom animation'),
+            onclick: runGeneration
+          })
+        ]);
+        if (media.custom) {
+          row.appendChild(el('button.btn.btn-ghost.btn-sm', {
+            type: 'button', text: 'Discard custom', disabled: busy,
+            onclick: function () {
+              delete media.custom;
+              media.preset = 'auto';
+              paintPanel();
+            }
+          }));
+        }
+        custom.appendChild(row);
+        custom.appendChild(status);
+      }
+
+      updateCue();
+      paintCustom();
       media.type = 'animation';
       refreshPreview();
 
       return el('div', [
-        el('p.panel-note', { text: 'The app draws the movement itself — no internet, no account, nothing to download. It picks a motion from the exercise name, and you can override it.' }),
+        el('p.panel-note', { text: 'The app draws the movement itself. Stock motions are matched from the exercise name and run entirely offline; a custom animation is worked out for your specific exercise.' }),
+        custom,
         UI.field('Motion', presetSelect),
         UI.field('Tempo', el('div', [tempo, tempoLabel])),
         cue

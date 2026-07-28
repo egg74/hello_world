@@ -26,10 +26,10 @@ browser's local storage.
 When you add or edit an exercise, the "How to do it" panel offers four ways to
 answer *how does this movement actually go?*
 
-1. **Generate animation** — the app draws the movement itself. No network, no
-   account, nothing to download. It reads the exercise name, picks a matching
-   motion, and animates a stick figure through it. You can override the motion
-   and set the tempo.
+1. **Generate animation** — the app draws the movement itself. Two flavours:
+   a **stock** motion, matched from the exercise name and rendered entirely
+   offline; or a **custom** one, worked out for your specific exercise (see
+   below). You can override the motion and set the tempo.
 2. **Search the web** — opens YouTube, Google Images, GIPHY or Tenor in a new
    tab with a sensible query already filled in, then you paste back the address
    of whatever you found.
@@ -65,6 +65,40 @@ by hand.
 label, keywords, a coaching cue and a few keyframes. It then appears in the
 motion dropdown and in auto-detection automatically.
 
+### Custom animations
+
+Keyword matching can only ever return the nearest stock movement. For an
+exercise like "Thoracic Extension & Rotation" there is no near miss — the honest
+answer is that the app doesn't know it, and matching it to a lookalike would be
+confidently wrong.
+
+So the app can instead ask Claude how the exercise is actually performed —
+searching the web when it isn't sure — and get back keyframes in the same pose
+schema the engine already speaks. The result is a motion built for that
+movement, plus a written description of how to do it and a coaching cue.
+
+This is the only part of the app that touches the network, and it is off until
+you add a Claude API key under **History → Custom animations**. The key is kept
+in this browser, in its own storage entry so that it is never included in a data
+export. Everything else works without it, and an exercise with no custom
+animation just falls back to the keyword-matched stock motion.
+
+Some things worth knowing about the design:
+
+- The call goes straight from the browser to the Claude API, which requires the
+  `anthropic-dangerous-direct-browser-access` header. A key in a browser is only
+  as private as the device it sits on — use a dedicated key with a spend limit.
+- `assets/js/coach.js` holds the prompt, the tool schema, and the validation.
+  The model returns its answer through a `strict` tool call, so the shape is
+  guaranteed; every number is still clamped and the keyframes re-sorted before
+  anything reaches the renderer, because model output is not trusted input.
+- The model never sets the whole-body rotation or the framing. It picks one of
+  four orientations (`standing`, `lying_face_down`, `lying_face_up`, `hanging`)
+  and `Anim.fromSpec` derives the rotation, floor height, zoom and anchoring
+  from that — the same values the hand-authored presets use.
+- It reports its own `confidence`. A low-confidence result is flagged in the
+  editor, with a box to describe the movement in your own words and rebuild.
+
 ## Layout
 
 ```
@@ -73,6 +107,7 @@ assets/styles.css     styles (dark and light)
 assets/js/anim.js     stick-figure animation engine and motion library
 assets/js/store.js    localStorage persistence, seed data, import/export
 assets/js/media.js    demo sources: animation, link, upload, search links
+assets/js/coach.js    custom-animation generation via the Claude API
 assets/js/ui.js       DOM helpers, modals, toasts
 assets/js/exercises.js exercise library and editor (incl. the demo picker)
 assets/js/routines.js routine list and builder

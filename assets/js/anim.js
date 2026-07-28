@@ -398,7 +398,53 @@
     return ORDER.map(function (k) { return { key: k, label: MOTIONS[k].label }; });
   }
 
-  function get(key) { return MOTIONS[key] || MOTIONS.generic; }
+  /* Accepts a preset key, or a motion object built by fromSpec(). */
+  function get(key) {
+    if (key && typeof key === 'object' && Array.isArray(key.frames)) return key;
+    return MOTIONS[key] || MOTIONS.generic;
+  }
+
+  /* How each body position maps onto the renderer's framing controls. A
+   * generated motion only has to say which of these it is; everything else —
+   * the whole-body rotation, where the floor sits, what stays still
+   * horizontally — follows from that. */
+  var ORIENTATIONS = {
+    standing: { rot: 0, floor: 0.9, anchor: 0.5 },
+    lying_face_down: { rot: 90, floor: 0.72, zoom: 1.12, anchor: 0.5, anchorOn: 'bbox' },
+    lying_face_up: { rot: -90, floor: 0.72, zoom: 1.12, anchor: 0.5, anchorOn: 'bbox' },
+    hanging: { rot: 0, hang: true, prop: 'bar', anchor: 0.5, anchorOn: 'hands' }
+  };
+
+  /* Turn a generated spec into a motion the renderer can play. */
+  function fromSpec(spec) {
+    var frame = ORIENTATIONS[spec.orientation] || ORIENTATIONS.standing;
+    return {
+      label: spec.label || 'Custom motion',
+      cue: spec.cue || '',
+      howTo: spec.howTo || '',
+      keywords: [],
+      custom: true,
+      confidence: spec.confidence,
+      anchor: frame.anchor,
+      floor: frame.floor,
+      zoom: frame.zoom,
+      anchorOn: frame.anchorOn,
+      hang: frame.hang,
+      prop: frame.prop,
+      frames: spec.frames.map(function (f) {
+        // Accept both the stored shape ({t, pose}) and a flat frame that lists
+        // its joint angles alongside t, so an imported or hand-edited motion
+        // still renders instead of throwing.
+        var source = f.pose || f;
+        var pose = {};
+        Object.keys(source).forEach(function (k) {
+          if (k !== 't' && typeof source[k] === 'number') pose[k] = source[k];
+        });
+        pose.rot = frame.rot;
+        return { t: typeof f.t === 'number' ? f.t : 0, pose: pose };
+      })
+    };
+  }
 
   /* ------------------------------------------------------------ interpolate */
 
@@ -630,6 +676,8 @@
     detect: detect,
     list: list,
     get: get,
+    fromSpec: fromSpec,
+    ORIENTATIONS: ORIENTATIONS,
     Player: Player,
     thumbnail: thumbnail,
     poseAt: poseAt

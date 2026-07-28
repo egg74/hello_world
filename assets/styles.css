@@ -283,6 +283,30 @@ select.input, select { width: 100%; padding: 9px 12px; font: inherit; font-size:
 .tab-panel { margin-bottom: 10px; }
 .demo-preview { margin-top: 10px; }
 
+/* ------------------------------------------------- custom animation block */
+
+.custom-block {
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+  background: var(--surface); margin-bottom: 14px;
+}
+.custom-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.badge-quiet { background: var(--surface-2); color: var(--muted); }
+.custom-howto { font-size: .88rem; margin-bottom: .7em; }
+.custom-locked p { color: var(--muted); font-size: .84rem; }
+.custom-locked .btn { margin-top: 6px; }
+
+.gen-status { font-size: .8rem; color: var(--muted); margin: 8px 0 0; min-height: 1em; }
+.gen-working { color: var(--accent); }
+.gen-ok { color: var(--accent); font-weight: 600; }
+.gen-error { color: var(--danger); }
+.gen-warn { color: #d97706; }
+@media (prefers-color-scheme: dark) { .gen-warn { color: #fbbf24; } }
+:root[data-theme="dark"] .gen-warn { color: #fbbf24; }
+:root[data-theme="light"] .gen-warn { color: #d97706; }
+
+.panel-warn { border-left: 2px solid var(--line); padding-left: 10px; margin-top: 12px; }
+.demo-howto { font-size: .9rem; margin-top: 10px; }
+
 .search-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 10px 0 14px; }
 .search-link {
   display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--fg);

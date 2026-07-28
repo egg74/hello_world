@@ -16,7 +16,7 @@ const path = require('path');
 const root = __dirname;
 const out = process.argv[2] || path.join(root, 'dist', 'fitforge.html');
 
-const SCRIPTS = ['anim', 'store', 'media', 'ui', 'exercises', 'routines', 'player', 'app'];
+const SCRIPTS = ['anim', 'store', 'media', 'coach', 'ui', 'exercises', 'routines', 'player', 'app'];
 
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
