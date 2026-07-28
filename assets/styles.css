@@ -15,8 +15,10 @@
   --shadow: 0 12px 32px rgba(0, 0, 0, .35);
 }
 
+/* Light palette. Applied when the system asks for it, unless a host has
+ * explicitly stamped data-theme="dark" on the root element. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #f4f6fa;
     --bg-2: #ffffff;
     --surface: #ffffff;
@@ -29,6 +31,22 @@
     --danger: #dc2626;
     --shadow: 0 10px 26px rgba(20, 30, 50, .10);
   }
+}
+
+/* An explicit light choice always wins, whatever the system says. Comes after
+ * the media query so it takes precedence at equal specificity. */
+:root[data-theme="light"] {
+  --bg: #f4f6fa;
+  --bg-2: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #eef1f6;
+  --line: #dde3ec;
+  --fg: #131922;
+  --muted: #5d6b80;
+  --accent: #16a34a;
+  --accent-ink: #ffffff;
+  --danger: #dc2626;
+  --shadow: 0 10px 26px rgba(20, 30, 50, .10);
 }
 
 * { box-sizing: border-box; }

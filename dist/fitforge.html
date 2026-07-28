@@ -1,0 +1,3070 @@
+<title>FitForge — build your routine</title>
+<meta name="description" content="Build workout routines and see how every exercise is done.">
+<style>
+/* FitForge — styles. Dark by default, light when the system asks for it. */
+
+:root {
+  --bg: #0e1116;
+  --bg-2: #151a22;
+  --surface: #1a2029;
+  --surface-2: #212936;
+  --line: #2a3341;
+  --fg: #e8ecf4;
+  --muted: #8b97ab;
+  --accent: #4ade80;
+  --accent-ink: #06240f;
+  --danger: #f87171;
+  --radius: 14px;
+  --shadow: 0 12px 32px rgba(0, 0, 0, .35);
+}
+
+/* Light palette. Applied when the system asks for it, unless a host has
+ * explicitly stamped data-theme="dark" on the root element. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f6fa;
+    --bg-2: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --line: #dde3ec;
+    --fg: #131922;
+    --muted: #5d6b80;
+    --accent: #16a34a;
+    --accent-ink: #ffffff;
+    --danger: #dc2626;
+    --shadow: 0 10px 26px rgba(20, 30, 50, .10);
+  }
+}
+
+/* An explicit light choice always wins, whatever the system says. Comes after
+ * the media query so it takes precedence at equal specificity. */
+:root[data-theme="light"] {
+  --bg: #f4f6fa;
+  --bg-2: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #eef1f6;
+  --line: #dde3ec;
+  --fg: #131922;
+  --muted: #5d6b80;
+  --accent: #16a34a;
+  --accent-ink: #ffffff;
+  --danger: #dc2626;
+  --shadow: 0 10px 26px rgba(20, 30, 50, .10);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.no-scroll { overflow: hidden; }
+
+h1, h2, h3 { margin: 0 0 .3em; line-height: 1.2; letter-spacing: -.01em; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.02rem; }
+p { margin: 0 0 .6em; }
+.sub { color: var(--muted); font-size: .9rem; }
+.eyebrow { color: var(--accent); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .4em; }
+
+.app { max-width: 1080px; margin: 0 auto; padding: 0 16px 96px; }
+
+/* ------------------------------------------------------------------ topbar */
+
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 0; margin-bottom: 8px;
+  background: linear-gradient(var(--bg) 72%, transparent);
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.brand-mark {
+  display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: .82rem;
+}
+.brand-name { font-weight: 700; letter-spacing: -.02em; }
+
+.nav { display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: 12px; border: 1px solid var(--line); }
+.nav-btn {
+  display: flex; align-items: center; gap: 6px;
+  border: 0; background: none; color: var(--muted);
+  padding: 8px 12px; border-radius: 9px; cursor: pointer; font: inherit; font-size: .88rem;
+}
+.nav-btn:hover { color: var(--fg); }
+.nav-on { background: var(--surface-2); color: var(--fg); font-weight: 600; }
+.icon { width: 18px; height: 18px; flex: none; }
+
+/* ------------------------------------------------------------------ layout */
+
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 8px 0 20px; }
+.section-title { margin: 32px 0 12px; font-size: 1.05rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row-end { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* -------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid transparent; border-radius: 10px;
+  padding: 9px 15px; font: inherit; font-size: .92rem; font-weight: 600;
+  cursor: pointer; text-decoration: none; color: var(--fg); background: var(--surface-2);
+  transition: transform .06s ease, filter .15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-ghost { background: transparent; border-color: var(--line); color: var(--fg); }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-sm { padding: 6px 11px; font-size: .84rem; }
+.btn-lg { padding: 12px 20px; font-size: 1rem; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.icon-btn {
+  display: inline-grid; place-items: center; width: 34px; height: 34px;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  border-radius: 9px; cursor: pointer; padding: 0;
+}
+.icon-btn:hover { color: var(--fg); background: var(--surface-2); }
+.icon-btn:disabled { opacity: .3; cursor: not-allowed; }
+.icon-btn.danger:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
+
+/* --------------------------------------------------------------- controls */
+
+.input {
+  width: 100%; padding: 9px 12px; font: inherit; font-size: .93rem;
+  color: var(--fg); background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.input-sm { padding: 6px 8px; font-size: .86rem; }
+textarea.input { resize: vertical; min-height: 60px; }
+select.input, select { width: 100%; padding: 9px 12px; font: inherit; font-size: .93rem; color: var(--fg); background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; }
+.range { width: 100%; accent-color: var(--accent); }
+
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; flex: 1 1 120px; }
+.field-label { font-size: .8rem; font-weight: 600; color: var(--muted); }
+.field-hint { font-size: .78rem; color: var(--muted); }
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.form-slot { flex: 1 1 120px; }
+
+.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+.toolbar .input { flex: 1 1 220px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  padding: 6px 12px; border-radius: 999px; font: inherit; font-size: .82rem; cursor: pointer;
+}
+.chip:hover { color: var(--fg); }
+.chip-on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+/* ------------------------------------------------------------------- hero */
+
+.hero {
+  display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  padding: 26px; margin-bottom: 20px;
+}
+.hero h1 { font-size: 1.9rem; }
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.hero-anim { position: relative; }
+.hero-anim .anim-canvas { width: 100%; height: 210px; display: block; }
+.hero-caption { text-align: center; color: var(--muted); font-size: .82rem; margin: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 2px;
+}
+.stat strong { font-size: 1.5rem; letter-spacing: -.02em; }
+.stat span { color: var(--muted); font-size: .8rem; }
+
+/* -------------------------------------------------------- exercise cards */
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.card-thumb { background: var(--bg-2); border-bottom: 1px solid var(--line); height: 150px; position: relative; }
+.card-thumb .anim-canvas, .card-thumb .media { width: 100%; height: 150px; display: block; }
+.card-thumb .media img, .card-thumb .media video, .card-thumb .media iframe { width: 100%; height: 150px; object-fit: cover; }
+.card-body { padding: 12px 14px 4px; flex: 1; }
+.card-meta { color: var(--muted); font-size: .82rem; margin-bottom: .2em; }
+.card-media { color: var(--accent); font-size: .76rem; font-weight: 600; margin-bottom: .2em; }
+.card-default { color: var(--muted); font-size: .8rem; }
+.card-actions { display: flex; gap: 6px; align-items: center; padding: 8px 12px 12px; }
+.card-actions .btn { margin-right: auto; }
+
+/* ------------------------------------------------------------- routines */
+
+.routine-list { display: flex; flex-direction: column; gap: 12px; }
+.routine-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px;
+}
+.routine-main { flex: 1 1 260px; min-width: 0; }
+.routine-meta { color: var(--muted); font-size: .84rem; }
+.routine-names { color: var(--muted); font-size: .8rem; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.routine-strip { display: flex; gap: 4px; margin-top: 10px; }
+.strip-thumb { width: 46px; height: 46px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; }
+.routine-actions { display: flex; gap: 8px; align-items: center; }
+
+/* --------------------------------------------------------- routine builder */
+
+.builder-summary { color: var(--muted); font-size: .84rem; }
+.builder-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.builder-item {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+}
+.builder-order { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.builder-order .icon-btn { width: 26px; height: 22px; border: 0; }
+.order-num { font-size: .74rem; color: var(--muted); font-weight: 700; }
+.row-thumb { width: 52px; height: 52px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; flex: none; }
+.builder-info { flex: 1 1 120px; display: flex; flex-direction: column; min-width: 0; }
+.builder-info .sub { font-size: .76rem; }
+.builder-fields { display: flex; gap: 8px; flex-wrap: wrap; flex: 0 1 auto; justify-content: flex-end; }
+.builder-fields .field { margin-bottom: 0; width: 64px; flex: none; }
+.builder-item > .icon-btn.danger { margin-left: auto; }
+
+.picker-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-top: 10px; }
+.picker-item {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; cursor: pointer; color: var(--fg); font: inherit;
+}
+.picker-item:hover { border-color: var(--accent); }
+.picker-item strong { display: block; font-size: .88rem; font-weight: 600; }
+.picker-item small { color: var(--muted); font-size: .74rem; }
+.picker-item .icon { color: var(--accent); }
+
+/* ------------------------------------------------------------------ media */
+
+.media { position: relative; width: 100%; background: var(--bg-2); border-radius: 12px; overflow: hidden; display: block; }
+.media img, .media video { width: 100%; display: block; }
+.media iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; display: block; }
+.anim-canvas { width: 100%; height: 240px; display: block; }
+.media-lg .anim-canvas { height: 320px; }
+.media-fallback { padding: 24px; text-align: center; color: var(--muted); font-size: .88rem; }
+
+.demo-caption { color: var(--accent); font-size: .8rem; font-weight: 600; text-align: center; margin: 8px 0 0; }
+.demo-cue { color: var(--muted); font-size: .85rem; font-style: italic; margin-top: 8px; }
+.demo-notes { color: var(--fg); font-size: .9rem; margin-top: 10px; }
+
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 16px 0 0; }
+.spec div { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.spec dt { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; }
+.spec dd { margin: 2px 0 0; font-size: .9rem; }
+
+/* ------------------------------------------------------------ demo picker */
+
+.demo-picker {
+  border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+  background: var(--bg-2); margin-top: 6px;
+}
+.demo-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.demo-head h3 { margin: 0; }
+.badge {
+  background: var(--accent); color: var(--accent-ink); font-size: .66rem; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px;
+}
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.tab {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  padding: 7px 12px; border-radius: 9px; font: inherit; font-size: .84rem; cursor: pointer;
+}
+.tab:hover { color: var(--fg); }
+.tab-on { background: var(--surface-2); color: var(--fg); border-color: var(--accent); font-weight: 600; }
+.panel-note { color: var(--muted); font-size: .82rem; }
+.tab-panel { margin-bottom: 10px; }
+.demo-preview { margin-top: 10px; }
+
+.search-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 10px 0 14px; }
+.search-link {
+  display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+.search-link:hover { border-color: var(--accent); }
+.search-link .icon { color: var(--accent); flex: none; }
+.search-link strong { display: block; font-size: .88rem; }
+.search-link small { color: var(--muted); font-size: .74rem; line-height: 1.3; display: block; }
+
+/* ----------------------------------------------------------------- modal */
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50; background: rgba(5, 8, 12, .66);
+  display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto;
+  backdrop-filter: blur(3px);
+}
+.modal {
+  width: 100%; max-width: 640px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+  margin: auto;
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.modal-head h2 { margin: 0; font-size: 1.1rem; }
+.modal-body { padding: 18px; }
+.modal-foot { padding: 14px 18px; border-top: 1px solid var(--line); }
+.confirm-text { margin: 0; }
+
+.empty {
+  text-align: center; color: var(--muted); padding: 42px 20px;
+  border: 1px dashed var(--line); border-radius: var(--radius); grid-column: 1 / -1;
+}
+.empty h3 { color: var(--fg); }
+.empty .btn { margin-top: 10px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 16px);
+  background: var(--fg); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+  font-size: .88rem; font-weight: 600; opacity: 0; transition: opacity .2s, transform .2s; z-index: 90;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------------------------------------------------------------- player */
+
+.player-overlay { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow-y: auto; }
+.player-inner { max-width: 900px; margin: 0 auto; padding: 18px 16px 40px; display: flex; flex-direction: column; min-height: 100%; }
+.player-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.player-routine { font-weight: 700; margin: 0; }
+.player-progress-text { color: var(--muted); font-size: .82rem; margin: 0; }
+.player-bar { height: 5px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 12px 0 20px; }
+.player-bar-fill { height: 100%; background: var(--accent); transition: width .3s ease; }
+
+.player-stage { display: grid; grid-template-columns: 1.05fr .95fr; gap: 24px; align-items: center; flex: 1; }
+.player-media .media { border: 1px solid var(--line); }
+.player-info h2 { font-size: 1.6rem; }
+.player-target { font-size: 1.1rem; color: var(--accent); font-weight: 700; }
+.player-set { color: var(--muted); font-size: .86rem; }
+.player-notes { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .88rem; margin-top: 12px; }
+.next-up { color: var(--muted); font-size: .84rem; margin-top: 14px; }
+
+.rest-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
+.rest-label { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+
+.timer { position: relative; width: 190px; height: 190px; margin: 14px 0; }
+.ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--surface-2); stroke-width: 8; }
+.ring-progress { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset .25s linear; }
+.timer-value { position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.player-controls { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }
+.player-controls .btn { min-width: 108px; }
+.player-hint { text-align: center; color: var(--muted); font-size: .76rem; margin-top: 14px; }
+
+.done { text-align: center; }
+.done-big { font-size: 1.5rem; font-weight: 700; }
+
+/* ---------------------------------------------------------------- history */
+
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+.history-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 15px;
+}
+.history-row .sub { display: block; font-size: .78rem; }
+.history-right { text-align: right; }
+.pill { background: var(--surface-2); border-radius: 999px; padding: 3px 10px; font-size: .8rem; font-weight: 600; }
+.settings { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.settings label.btn { cursor: pointer; }
+
+.footer {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  color: var(--muted); font-size: .78rem; margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
+}
+.footer a { color: var(--muted); }
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-anim .anim-canvas { height: 170px; }
+  .player-stage { grid-template-columns: 1fr; gap: 14px; }
+  .player-info { text-align: center; }
+  .timer { margin: 14px auto; width: 160px; height: 160px; }
+  .brand-name { display: none; }
+  .nav-btn span { display: none; }
+  .nav-btn { padding: 9px 13px; }
+  .media-lg .anim-canvas { height: 240px; }
+}
+
+@media (max-width: 480px) {
+  .app { padding: 0 12px 80px; }
+  h1 { font-size: 1.5rem; }
+  .hero { padding: 18px; }
+  .grid { grid-template-columns: 1fr 1fr; }
+  .card-thumb, .card-thumb .anim-canvas, .card-thumb .media { height: 120px; }
+  .builder-fields .field { width: 68px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="#home">
+      <span class="brand-mark" aria-hidden="true">FF</span>
+      <span class="brand-name">FitForge</span>
+    </a>
+    <nav id="nav" class="nav" aria-label="Main"></nav>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <footer class="footer">
+    <span>Saved in this browser only — nothing is uploaded.</span>
+  </footer>
+</div>
+
+<datalist id="category-list"></datalist>
+
+<script>
+/* ===== assets/js/anim.js ===== */
+/*
+ * anim.js — procedural exercise animation engine.
+ *
+ * Renders a 2D skeletal stick figure to a <canvas> and drives it through a
+ * keyframed motion so any exercise can have a generated demonstration without
+ * needing a video file or a network connection.
+ *
+ * Model: every segment is stored as an ABSOLUTE angle in degrees measured in
+ * the figure's local frame.
+ *   - torso: 0 = straight up, positive = leaning forward (towards +x / screen right)
+ *   - limbs: 0 = straight down, positive = swinging forward (towards +x)
+ * The whole figure can then be rotated about the hip with `rot` (clockwise
+ * degrees), which is how lying/horizontal moves such as push-ups and planks are
+ * authored: they are written as an upright figure and tipped over 90 degrees.
+ */
+(function (global) {
+  'use strict';
+
+  var RAD = Math.PI / 180;
+
+  // Segment lengths, in figure units. Total standing height is roughly 100.
+  var L = {
+    torso: 34,
+    neck: 9,
+    headR: 7,
+    upperArm: 18,
+    foreArm: 17,
+    thigh: 24,
+    shin: 24,
+    foot: 9
+  };
+
+  // Every pose is a sparse override of this neutral standing pose.
+  var BASE = {
+    rot: 0,        // whole-body rotation about the hip, clockwise degrees
+    lift: 0,       // extra height above the ground, figure units (for jumps)
+    torso: 5,
+    head: -3,
+    armN: 8, foreN: 10,   // near-side arm (drawn solid)
+    armF: 8, foreF: 10,   // far-side arm (drawn faded, gives a sense of depth)
+    thighN: 2, shinN: 0, footN: 88,
+    thighF: 2, shinF: 0, footF: 88
+  };
+
+  function dirUp(a) { return [Math.sin(a * RAD), -Math.cos(a * RAD)]; }
+  function dirDown(a) { return [Math.sin(a * RAD), Math.cos(a * RAD)]; }
+  function add(p, d, len) { return [p[0] + d[0] * len, p[1] + d[1] * len]; }
+
+  /* Solve forward kinematics for a pose. Returns named points in local space
+   * with the hip at the origin, already rotated by pose.rot. */
+  function solve(pose) {
+    var hip = [0, 0];
+    var neck = add(hip, dirUp(pose.torso), L.torso);
+    var headBase = add(neck, dirUp(pose.torso + pose.head), L.neck);
+    // The shoulders sit a touch below the neck joint.
+    var shoulder = add(hip, dirUp(pose.torso), L.torso * 0.94);
+
+    function arm(a, f) {
+      var elbow = add(shoulder, dirDown(a), L.upperArm);
+      return { elbow: elbow, hand: add(elbow, dirDown(f), L.foreArm) };
+    }
+    function leg(t, s, ft) {
+      var knee = add(hip, dirDown(t), L.thigh);
+      var ankle = add(knee, dirDown(s), L.shin);
+      return { knee: knee, ankle: ankle, toe: add(ankle, dirDown(ft), L.foot) };
+    }
+
+    var pts = {
+      hip: hip,
+      neck: neck,
+      shoulder: shoulder,
+      head: headBase,
+      armN: arm(pose.armN, pose.foreN),
+      armF: arm(pose.armF, pose.foreF),
+      legN: leg(pose.thighN, pose.shinN, pose.footN),
+      legF: leg(pose.thighF, pose.shinF, pose.footF)
+    };
+
+    if (pose.rot) {
+      var c = Math.cos(pose.rot * RAD), s = Math.sin(pose.rot * RAD);
+      var rotate = function (p) { return [p[0] * c - p[1] * s, p[0] * s + p[1] * c]; };
+      pts.neck = rotate(pts.neck);
+      pts.shoulder = rotate(pts.shoulder);
+      pts.head = rotate(pts.head);
+      ['armN', 'armF'].forEach(function (k) {
+        pts[k] = { elbow: rotate(pts[k].elbow), hand: rotate(pts[k].hand) };
+      });
+      ['legN', 'legF'].forEach(function (k) {
+        pts[k] = { knee: rotate(pts[k].knee), ankle: rotate(pts[k].ankle), toe: rotate(pts[k].toe) };
+      });
+    }
+    return pts;
+  }
+
+  function eachPoint(pts, fn) {
+    fn(pts.hip); fn(pts.neck); fn(pts.shoulder); fn(pts.head);
+    ['armN', 'armF'].forEach(function (k) { fn(pts[k].elbow); fn(pts[k].hand); });
+    ['legN', 'legF'].forEach(function (k) { fn(pts[k].knee); fn(pts[k].ankle); fn(pts[k].toe); });
+  }
+
+  /* ---------------------------------------------------------------- motions */
+
+  function kf(t, pose) { return { t: t, pose: pose }; }
+
+  /* Each motion is a list of keyframes over one normalised rep (t: 0 -> 1).
+   * `anchor` is where the feet are planted horizontally, as a fraction of the
+   * canvas width; `prop` draws optional scenery (a pull-up bar, a bench). */
+  var MOTIONS = {
+    squat: {
+      label: 'Squat',
+      keywords: ['squat', 'air squat', 'goblet', 'sumo'],
+      cue: 'Chest up, knees tracking over the toes, hips back and down.',
+      frames: [
+        kf(0.00, { torso: 6, armN: 66, foreN: 74, armF: 66, foreF: 74, thighN: 2, shinN: -2, thighF: 2, shinF: -2 }),
+        kf(0.45, { torso: 32, armN: 84, foreN: 80, armF: 84, foreF: 80, thighN: 68, shinN: -34, footN: 92, thighF: 66, shinF: -32, footF: 92 }),
+        kf(0.60, { torso: 32, armN: 84, foreN: 80, armF: 84, foreF: 80, thighN: 68, shinN: -34, footN: 92, thighF: 66, shinF: -32, footF: 92 }),
+        kf(1.00, { torso: 6, armN: 66, foreN: 74, armF: 66, foreF: 74, thighN: 2, shinN: -2, thighF: 2, shinF: -2 })
+      ]
+    },
+
+    jumpsquat: {
+      label: 'Jump squat',
+      keywords: ['jump squat', 'squat jump', 'box jump'],
+      cue: 'Load the hips, then drive through the floor and land soft.',
+      frames: [
+        kf(0.00, { torso: 6, armN: 10, foreN: 12, armF: 10, foreF: 12 }),
+        kf(0.30, { torso: 40, armN: -30, foreN: -20, armF: -30, foreF: -20, thighN: 66, shinN: -32, thighF: 66, shinF: -32 }),
+        kf(0.50, { lift: 26, torso: 8, armN: 150, foreN: 160, armF: 150, foreF: 160, thighN: 0, shinN: 6, footN: 120, thighF: 0, shinF: 6, footF: 120 }),
+        kf(0.70, { torso: 26, armN: 40, foreN: 50, armF: 40, foreF: 50, thighN: 40, shinN: -18, thighF: 40, shinF: -18 }),
+        kf(1.00, { torso: 6, armN: 10, foreN: 12, armF: 10, foreF: 12 })
+      ]
+    },
+
+    pushup: {
+      label: 'Push-up',
+      keywords: ['push up', 'pushup', 'push-up', 'press up', 'pressup'],
+      cue: 'Body in one line from head to heels, elbows about 45 degrees.',
+      anchor: 0.5, floor: 0.72, zoom: 1.12, anchorOn: 'bbox',
+      frames: [
+        kf(0.00, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, thighN: 0, shinN: 0, footN: 74, thighF: 0, shinF: 0, footF: 74 }),
+        kf(0.45, { rot: 90, torso: 0, head: 14, armN: 142, foreN: 44, armF: 142, foreF: 44, thighN: 0, shinN: 0, footN: 74, thighF: 0, shinF: 0, footF: 74 }),
+        kf(0.58, { rot: 90, torso: 0, head: 14, armN: 142, foreN: 44, armF: 142, foreF: 44, thighN: 0, shinN: 0, footN: 74, thighF: 0, shinF: 0, footF: 74 }),
+        kf(1.00, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, thighN: 0, shinN: 0, footN: 74, thighF: 0, shinF: 0, footF: 74 })
+      ]
+    },
+
+    plank: {
+      label: 'Plank (hold)',
+      keywords: ['plank', 'hollow hold', 'hold'],
+      cue: 'Squeeze the glutes, brace the ribs down, breathe.',
+      // Forearm plank: upper arm straight down to the floor (90) and the
+      // forearm lying flat along it towards the head (180).
+      anchor: 0.5, floor: 0.72, zoom: 1.12, anchorOn: 'bbox',
+      frames: [
+        kf(0.00, { rot: 90, torso: 0, head: 12, armN: 90, foreN: 180, armF: 90, foreF: 180, thighN: 0, shinN: 0, footN: 74, thighF: 0, shinF: 0, footF: 74 }),
+        kf(0.50, { rot: 90, torso: -2, head: 14, armN: 90, foreN: 180, armF: 90, foreF: 180, thighN: 1, shinN: 0, footN: 74, thighF: 1, shinF: 0, footF: 74 }),
+        kf(1.00, { rot: 90, torso: 0, head: 12, armN: 90, foreN: 180, armF: 90, foreF: 180, thighN: 0, shinN: 0, footN: 74, thighF: 0, shinF: 0, footF: 74 })
+      ]
+    },
+
+    mountainclimber: {
+      label: 'Mountain climber',
+      keywords: ['mountain climber', 'climber'],
+      cue: 'Hips low and still, drive one knee at a time to the chest.',
+      // With rot 90 the head points screen-right, so a knee driven towards the
+      // chest needs a large positive thigh angle (towards local "up").
+      anchor: 0.5, floor: 0.72, zoom: 1.12, anchorOn: 'bbox',
+      frames: [
+        kf(0.00, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, thighN: 0, shinN: 0, footN: 74, thighF: 150, shinF: 60, footF: 74 }),
+        kf(0.50, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, thighN: 150, shinN: 60, footN: 74, thighF: 0, shinF: 0, footF: 74 }),
+        kf(1.00, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, thighN: 0, shinN: 0, footN: 74, thighF: 150, shinF: 60, footF: 74 })
+      ]
+    },
+
+    lunge: {
+      label: 'Lunge',
+      keywords: ['lunge', 'split squat', 'step up', 'stepup'],
+      cue: 'Step out, drop the back knee, keep the torso tall.',
+      frames: [
+        kf(0.00, { torso: 5 }),
+        kf(0.45, { torso: 8, armN: 24, foreN: 26, armF: -18, foreF: -14, thighN: 45, shinN: -15, footN: 92, thighF: -20, shinF: -60, footF: 58 }),
+        kf(0.60, { torso: 8, armN: 24, foreN: 26, armF: -18, foreF: -14, thighN: 45, shinN: -15, footN: 92, thighF: -20, shinF: -60, footF: 58 }),
+        kf(1.00, { torso: 5 })
+      ]
+    },
+
+    jumpingjack: {
+      label: 'Jumping jack',
+      keywords: ['jumping jack', 'star jump', 'jack'],
+      cue: 'Arms all the way overhead, land through the whole foot.',
+      frames: [
+        kf(0.00, { armN: 6, foreN: 6, armF: 6, foreF: 6, thighN: 2, thighF: 2 }),
+        kf(0.25, { lift: 10, armN: 96, foreN: 110, armF: 96, foreF: 110, thighN: 18, shinN: 6, thighF: -16, shinF: -6 }),
+        kf(0.50, { armN: 168, foreN: 172, armF: 168, foreF: 172, thighN: 26, shinN: 8, footN: 96, thighF: -24, shinF: -8, footF: 80 }),
+        kf(0.75, { lift: 10, armN: 96, foreN: 110, armF: 96, foreF: 110, thighN: 18, shinN: 6, thighF: -16, shinF: -6 }),
+        kf(1.00, { armN: 6, foreN: 6, armF: 6, foreF: 6, thighN: 2, thighF: 2 })
+      ]
+    },
+
+    highknees: {
+      label: 'High knees / run',
+      keywords: ['high knee', 'running', 'run', 'jog', 'sprint', 'march', 'cardio'],
+      cue: 'Tall posture, quick feet, drive the knees to hip height.',
+      frames: [
+        kf(0.00, { torso: 10, armN: -34, foreN: -60, armF: 40, foreF: 78, thighN: -28, shinN: 10, thighF: 78, shinF: -66, footF: 74 }),
+        kf(0.50, { torso: 10, armN: 40, foreN: 78, armF: -34, foreF: -60, thighN: 78, shinN: -66, footN: 74, thighF: -28, shinF: 10 }),
+        kf(1.00, { torso: 10, armN: -34, foreN: -60, armF: 40, foreF: 78, thighN: -28, shinN: 10, thighF: 78, shinF: -66, footF: 74 })
+      ]
+    },
+
+    bicepcurl: {
+      label: 'Biceps curl',
+      keywords: ['curl', 'bicep', 'biceps'],
+      cue: 'Elbows pinned to the ribs, no swinging.',
+      frames: [
+        kf(0.00, { armN: 6, foreN: 8, armF: 6, foreF: 8 }),
+        kf(0.45, { armN: 12, foreN: 128, armF: 12, foreF: 128 }),
+        kf(0.58, { armN: 12, foreN: 128, armF: 12, foreF: 128 }),
+        kf(1.00, { armN: 6, foreN: 8, armF: 6, foreF: 8 })
+      ]
+    },
+
+    overheadpress: {
+      label: 'Overhead press',
+      keywords: ['overhead press', 'shoulder press', 'military press', 'push press', 'ohp'],
+      cue: 'Ribs down, press straight up until the arms lock out.',
+      frames: [
+        kf(0.00, { torso: 3, armN: 34, foreN: 148, armF: 34, foreF: 148 }),
+        kf(0.45, { torso: 2, armN: 172, foreN: 176, armF: 172, foreF: 176 }),
+        kf(0.58, { torso: 2, armN: 172, foreN: 176, armF: 172, foreF: 176 }),
+        kf(1.00, { torso: 3, armN: 34, foreN: 148, armF: 34, foreF: 148 })
+      ]
+    },
+
+    lateralraise: {
+      label: 'Lateral raise',
+      keywords: ['lateral raise', 'side raise', 'fly', 'flye', 'reverse fly'],
+      cue: 'Lead with the elbows, stop at shoulder height.',
+      frames: [
+        kf(0.00, { armN: 8, foreN: 10, armF: 8, foreF: 10 }),
+        kf(0.45, { armN: 88, foreN: 92, armF: 84, foreF: 88 }),
+        kf(0.58, { armN: 88, foreN: 92, armF: 84, foreF: 88 }),
+        kf(1.00, { armN: 8, foreN: 10, armF: 8, foreF: 10 })
+      ]
+    },
+
+    deadlift: {
+      label: 'Hip hinge / deadlift',
+      keywords: ['deadlift', 'hinge', 'good morning', 'rdl', 'romanian', 'kettlebell swing', 'swing'],
+      cue: 'Push the hips back, flat back, bar close to the legs.',
+      frames: [
+        kf(0.00, { torso: 4, armN: 6, foreN: 8, armF: 6, foreF: 8 }),
+        kf(0.45, { torso: 74, armN: -60, foreN: -62, armF: -60, foreF: -62, thighN: -12, shinN: 10, thighF: -12, shinF: 10 }),
+        kf(0.58, { torso: 74, armN: -60, foreN: -62, armF: -60, foreF: -62, thighN: -12, shinN: 10, thighF: -12, shinF: 10 }),
+        kf(1.00, { torso: 4, armN: 6, foreN: 8, armF: 6, foreF: 8 })
+      ]
+    },
+
+    bentoverrow: {
+      label: 'Bent-over row',
+      keywords: ['row', 'bent over', 'bent-over', 'pendlay'],
+      cue: 'Hinge to about 45 degrees, pull the elbows past the ribs.',
+      frames: [
+        kf(0.00, { torso: 62, armN: -50, foreN: -54, armF: -50, foreF: -54, thighN: -10, shinN: 8, thighF: -10, shinF: 8 }),
+        kf(0.45, { torso: 62, armN: -104, foreN: -20, armF: -104, foreF: -20, thighN: -10, shinN: 8, thighF: -10, shinF: 8 }),
+        kf(0.58, { torso: 62, armN: -104, foreN: -20, armF: -104, foreF: -20, thighN: -10, shinN: 8, thighF: -10, shinF: 8 }),
+        kf(1.00, { torso: 62, armN: -50, foreN: -54, armF: -50, foreF: -54, thighN: -10, shinN: 8, thighF: -10, shinF: 8 })
+      ]
+    },
+
+    crunch: {
+      label: 'Crunch / sit-up',
+      keywords: ['crunch', 'sit up', 'situp', 'sit-up', 'abs', 'ab ', 'core', 'leg raise'],
+      cue: 'Peel the shoulders off the floor, do not yank on the neck.',
+      anchor: 0.5, floor: 0.72, zoom: 1.12, anchorOn: 'bbox',
+      frames: [
+        kf(0.00, { rot: -90, torso: 0, head: 14, armN: 150, foreN: 200, armF: 150, foreF: 200, thighN: 56, shinN: -36, footN: 60, thighF: 56, shinF: -36, footF: 60 }),
+        kf(0.45, { rot: -90, torso: 38, head: 22, armN: 150, foreN: 200, armF: 150, foreF: 200, thighN: 56, shinN: -36, footN: 60, thighF: 56, shinF: -36, footF: 60 }),
+        kf(0.58, { rot: -90, torso: 38, head: 22, armN: 150, foreN: 200, armF: 150, foreF: 200, thighN: 56, shinN: -36, footN: 60, thighF: 56, shinF: -36, footF: 60 }),
+        kf(1.00, { rot: -90, torso: 0, head: 14, armN: 150, foreN: 200, armF: 150, foreF: 200, thighN: 56, shinN: -36, footN: 60, thighF: 56, shinF: -36, footF: 60 })
+      ]
+    },
+
+    glutebridge: {
+      label: 'Glute bridge',
+      keywords: ['glute bridge', 'bridge', 'hip thrust'],
+      cue: 'Drive through the heels, squeeze at the top, ribs down.',
+      // Arms at 0 lie flat on the floor beside the hips once rotated.
+      anchor: 0.5, floor: 0.72, zoom: 1.12, anchorOn: 'bbox',
+      frames: [
+        kf(0.00, { rot: -90, torso: 0, head: 10, armN: 0, foreN: 0, armF: 0, foreF: 0, thighN: 62, shinN: -44, footN: 56, thighF: 62, shinF: -44, footF: 56 }),
+        kf(0.45, { rot: -90, torso: -34, head: 6, armN: 0, foreN: 0, armF: 0, foreF: 0, thighN: 28, shinN: -14, footN: 56, thighF: 28, shinF: -14, footF: 56 }),
+        kf(0.58, { rot: -90, torso: -34, head: 6, armN: 0, foreN: 0, armF: 0, foreF: 0, thighN: 28, shinN: -14, footN: 56, thighF: 28, shinF: -14, footF: 56 }),
+        kf(1.00, { rot: -90, torso: 0, head: 10, armN: 0, foreN: 0, armF: 0, foreF: 0, thighN: 62, shinN: -44, footN: 56, thighF: 62, shinF: -44, footF: 56 })
+      ]
+    },
+
+    pullup: {
+      label: 'Pull-up',
+      keywords: ['pull up', 'pullup', 'pull-up', 'chin up', 'chinup', 'lat pulldown', 'pulldown'],
+      cue: 'Start from a dead hang, pull the elbows down to the ribs.',
+      prop: 'bar',
+      hang: true,
+      anchorOn: 'hands',
+      frames: [
+        kf(0.00, { torso: 0, head: 4, armN: 176, foreN: 178, armF: 176, foreF: 178, thighN: -8, shinN: 30, footN: 110, thighF: -8, shinF: 30, footF: 110 }),
+        // Elbows out front and folded hard: that is what actually lifts the
+        // body, since the hands stay pinned to the bar.
+        kf(0.45, { torso: -4, head: 6, armN: 116, foreN: 252, armF: 116, foreF: 252, thighN: -14, shinN: 44, footN: 110, thighF: -14, shinF: 44, footF: 110 }),
+        kf(0.58, { torso: -4, head: 6, armN: 116, foreN: 252, armF: 116, foreF: 252, thighN: -14, shinN: 44, footN: 110, thighF: -14, shinF: 44, footF: 110 }),
+        kf(1.00, { torso: 0, head: 4, armN: 176, foreN: 178, armF: 176, foreF: 178, thighN: -8, shinN: 30, footN: 110, thighF: -8, shinF: 30, footF: 110 })
+      ]
+    },
+
+    tricepdip: {
+      label: 'Dip',
+      keywords: ['dip', 'tricep', 'triceps'],
+      cue: 'Lower under control, elbows back rather than flared.',
+      prop: 'dipbar',
+      frames: [
+        kf(0.00, { torso: 12, armN: -14, foreN: -12, armF: -14, foreF: -12, thighN: 60, shinN: 30, footN: 110, thighF: 60, shinF: 30, footF: 110 }),
+        kf(0.45, { torso: 16, armN: -34, foreN: 26, armF: -34, foreF: 26, thighN: 62, shinN: 34, footN: 110, thighF: 62, shinF: 34, footF: 110 }),
+        kf(0.58, { torso: 16, armN: -34, foreN: 26, armF: -34, foreF: 26, thighN: 62, shinN: 34, footN: 110, thighF: 62, shinF: 34, footF: 110 }),
+        kf(1.00, { torso: 12, armN: -14, foreN: -12, armF: -14, foreF: -12, thighN: 60, shinN: 30, footN: 110, thighF: 60, shinF: 30, footF: 110 })
+      ]
+    },
+
+    calfraise: {
+      label: 'Calf raise',
+      keywords: ['calf raise', 'calf', 'heel raise'],
+      cue: 'Full stretch at the bottom, pause at the top.',
+      frames: [
+        kf(0.00, { footN: 88, footF: 88 }),
+        kf(0.45, { lift: 9, shinN: 12, shinF: 12, footN: 126, footF: 126, torso: 3 }),
+        kf(0.58, { lift: 9, shinN: 12, shinF: 12, footN: 126, footF: 126, torso: 3 }),
+        kf(1.00, { footN: 88, footF: 88 })
+      ]
+    },
+
+    burpee: {
+      label: 'Burpee',
+      keywords: ['burpee'],
+      cue: 'Squat, kick back, push-up, jump the feet in, jump up.',
+      anchor: 0.5, floor: 0.82, anchorOn: 'bbox',
+      frames: [
+        kf(0.00, { torso: 6 }),
+        kf(0.16, { torso: 44, armN: 70, foreN: 96, armF: 70, foreF: 96, thighN: 74, shinN: -40, footN: 92, thighF: 74, shinF: -40, footF: 92 }),
+        kf(0.34, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, footN: 74, footF: 74 }),
+        kf(0.46, { rot: 90, torso: 0, head: 14, armN: 142, foreN: 44, armF: 142, foreF: 44, footN: 74, footF: 74 }),
+        kf(0.58, { rot: 90, torso: 0, head: 14, armN: 90, foreN: 90, armF: 90, foreF: 90, footN: 74, footF: 74 }),
+        kf(0.72, { torso: 44, armN: 70, foreN: 96, armF: 70, foreF: 96, thighN: 74, shinN: -40, footN: 92, thighF: 74, shinF: -40, footF: 92 }),
+        kf(0.86, { lift: 22, torso: 6, armN: 166, foreN: 172, armF: 166, foreF: 172, footN: 118, footF: 118 }),
+        kf(1.00, { torso: 6 })
+      ]
+    },
+
+    stretch: {
+      label: 'Stretch / mobility',
+      keywords: ['stretch', 'mobility', 'reach', 'cat cow', 'warm up', 'warmup', 'cool down', 'cooldown'],
+      cue: 'Move slowly to the end of the range and breathe into it.',
+      frames: [
+        kf(0.00, { torso: 4, armN: 8, foreN: 10, armF: 8, foreF: 10 }),
+        kf(0.35, { torso: -4, armN: 172, foreN: 178, armF: 168, foreF: 174, shinN: -4, shinF: -4 }),
+        kf(0.70, { torso: 68, armN: -58, foreN: -60, armF: -58, foreF: -60, thighN: -8, shinN: 6, thighF: -8, shinF: 6 }),
+        kf(1.00, { torso: 4, armN: 8, foreN: 10, armF: 8, foreF: 10 })
+      ]
+    },
+
+    generic: {
+      label: 'Generic (breathing idle)',
+      keywords: [],
+      cue: 'No motion preset matched this exercise — pick one manually if you like.',
+      frames: [
+        kf(0.00, { torso: 5, armN: 8, foreN: 12, armF: 8, foreF: 12 }),
+        kf(0.50, { torso: 2, armN: 16, foreN: 22, armF: 14, foreF: 20, shinN: -3, shinF: -3 }),
+        kf(1.00, { torso: 5, armN: 8, foreN: 12, armF: 8, foreF: 12 })
+      ]
+    }
+  };
+
+  var ORDER = Object.keys(MOTIONS);
+
+  /* Pick a motion from an exercise name. Longer keywords win so that
+   * "jump squat" beats "squat" and "shoulder press" beats "press up". */
+  function detect(name) {
+    var n = ' ' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+    var best = null, bestLen = 0;
+    ORDER.forEach(function (key) {
+      MOTIONS[key].keywords.forEach(function (word) {
+        var w = word.trim();
+        if (w && n.indexOf(w) !== -1 && w.length > bestLen) { best = key; bestLen = w.length; }
+      });
+    });
+    return best || 'generic';
+  }
+
+  function list() {
+    return ORDER.map(function (k) { return { key: k, label: MOTIONS[k].label }; });
+  }
+
+  function get(key) { return MOTIONS[key] || MOTIONS.generic; }
+
+  /* ------------------------------------------------------------ interpolate */
+
+  function smooth(x) { return x * x * (3 - 2 * x); }
+
+  function poseAt(motion, t) {
+    var frames = motion.frames;
+    t = ((t % 1) + 1) % 1;
+    var i = 0;
+    while (i < frames.length - 2 && frames[i + 1].t <= t) i++;
+    var a = frames[i], b = frames[i + 1] || frames[frames.length - 1];
+    var span = b.t - a.t;
+    var k = span > 0 ? smooth((t - a.t) / span) : 0;
+    var out = {};
+    Object.keys(BASE).forEach(function (key) {
+      var av = a.pose[key] !== undefined ? a.pose[key] : BASE[key];
+      var bv = b.pose[key] !== undefined ? b.pose[key] : BASE[key];
+      out[key] = av + (bv - av) * k;
+    });
+    return out;
+  }
+
+  /* ---------------------------------------------------------------- renderer */
+
+  function cssVar(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+  }
+
+  function drawFrame(ctx, w, h, motion, t, opts) {
+    var pose = poseAt(motion, t);
+    var pts = solve(pose);
+
+    var ink = opts.ink || cssVar('--fg', '#e8ecf4');
+    var faded = opts.faded || cssVar('--muted', '#7c879b');
+    var accent = opts.accent || cssVar('--accent', '#4ade80');
+
+    // Scale so a standing figure fills most of the frame. Motions that lie
+    // down use a higher floor and a little extra zoom so they are not squashed
+    // into the bottom of the canvas.
+    var scale = Math.min(w, h) / 128 * (motion.zoom || 1);
+    var groundY = h * (motion.floor || 0.9);
+    var anchorX = w * (motion.anchor || 0.5);
+
+    // Ground the figure: the lowest point rests on the floor line, then `lift`
+    // raises it for jumps. Hanging moves (pull-ups) instead hang from a bar.
+    var minY = Infinity, maxY = -Infinity;
+    eachPoint(pts, function (p) { minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); });
+
+    var oy;
+    if (motion.hang) {
+      var handY = Math.min(pts.armN.hand[1], pts.armF.hand[1]);
+      oy = h * 0.14 - handY * scale;
+    } else {
+      oy = groundY - maxY * scale - (pose.lift || 0) * scale;
+    }
+    // Hold the figure still horizontally. Upright motions pin the planted
+    // feet; motions performed lying down centre their bounding box instead,
+    // which keeps a long horizontal body inside the frame.
+    var refX;
+    if (motion.anchorOn === 'bbox') {
+      var minX = Infinity, maxX = -Infinity;
+      eachPoint(pts, function (p) { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); });
+      refX = (minX + maxX) / 2;
+    } else if (motion.anchorOn === 'hands') {
+      refX = (pts.armN.hand[0] + pts.armF.hand[0]) / 2;
+    } else {
+      refX = (pts.legN.ankle[0] + pts.legF.ankle[0]) / 2;
+    }
+    var ox = anchorX - refX * scale;
+
+    function P(p) { return [ox + p[0] * scale, oy + p[1] * scale]; }
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Floor
+    if (!motion.hang) {
+      ctx.strokeStyle = faded;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = Math.max(1, scale * 0.6);
+      ctx.beginPath();
+      ctx.moveTo(w * 0.06, groundY);
+      ctx.lineTo(w * 0.94, groundY);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Props
+    if (motion.prop === 'bar') {
+      var barY = P(pts.armN.hand)[1];
+      ctx.strokeStyle = faded;
+      ctx.lineWidth = Math.max(2, scale * 1.1);
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, barY);
+      ctx.lineTo(w * 0.8, barY);
+      ctx.moveTo(w * 0.24, barY);
+      ctx.lineTo(w * 0.24, h * 0.06);
+      ctx.moveTo(w * 0.76, barY);
+      ctx.lineTo(w * 0.76, h * 0.06);
+      ctx.stroke();
+    } else if (motion.prop === 'dipbar') {
+      // The parallel bar the hands are resting on, so the pose reads as a dip
+      // rather than someone sitting in mid-air.
+      var hand = P(pts.armN.hand);
+      ctx.strokeStyle = faded;
+      ctx.lineWidth = Math.max(2, scale * 1.1);
+      ctx.beginPath();
+      ctx.moveTo(hand[0] - 22 * scale, hand[1]);
+      ctx.lineTo(hand[0] + 22 * scale, hand[1]);
+      ctx.moveTo(hand[0] + 18 * scale, hand[1]);
+      ctx.lineTo(hand[0] + 18 * scale, groundY);
+      ctx.stroke();
+    }
+
+    function chain(points, color, width, alpha) {
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      points.forEach(function (p, i) {
+        var q = P(p);
+        if (i === 0) ctx.moveTo(q[0], q[1]); else ctx.lineTo(q[0], q[1]);
+      });
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    var limbW = Math.max(2, scale * 2.4);
+    var torsoW = Math.max(3, scale * 3.4);
+
+    // Far side first so the near side reads as being in front.
+    chain([pts.shoulder, pts.armF.elbow, pts.armF.hand], faded, limbW, 0.55);
+    chain([pts.hip, pts.legF.knee, pts.legF.ankle, pts.legF.toe], faded, limbW, 0.55);
+
+    chain([pts.hip, pts.neck], accent, torsoW, 1);
+    chain([pts.shoulder, pts.armN.elbow, pts.armN.hand], ink, limbW, 1);
+    chain([pts.hip, pts.legN.knee, pts.legN.ankle, pts.legN.toe], ink, limbW, 1);
+
+    // Head
+    var hc = P(pts.head);
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.arc(hc[0], hc[1], L.headR * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* A live, looping animation bound to a canvas element. */
+  function Player(canvas, options) {
+    var opts = options || {};
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.motion = get(opts.motion);
+    this.duration = opts.tempo || 2.4;   // seconds per rep
+    this.t = 0;
+    this.raf = null;
+    this.paused = false;
+    this.opts = opts;
+    this.resize();
+  }
+
+  Player.prototype.resize = function () {
+    var dpr = global.devicePixelRatio || 1;
+    var rect = this.canvas.getBoundingClientRect();
+    var w = rect.width || this.canvas.width || 280;
+    var h = rect.height || this.canvas.height || 280;
+    this.canvas.width = Math.round(w * dpr);
+    this.canvas.height = Math.round(h * dpr);
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.w = w;
+    this.h = h;
+    this.render();
+  };
+
+  Player.prototype.setMotion = function (key) {
+    this.motion = get(key);
+    this.t = 0;
+    this.render();
+  };
+
+  Player.prototype.setTempo = function (seconds) {
+    this.duration = Math.max(0.4, seconds);
+  };
+
+  Player.prototype.render = function () {
+    if (!this.w) return;
+    drawFrame(this.ctx, this.w, this.h, this.motion, this.t, this.opts);
+  };
+
+  Player.prototype.start = function () {
+    if (this.raf) return;
+    var self = this;
+    var last = null;
+    this.paused = false;
+    var step = function (now) {
+      if (last === null) last = now;
+      var dt = (now - last) / 1000;
+      last = now;
+      if (!self.paused) {
+        self.t = (self.t + dt / self.duration) % 1;
+        self.render();
+      }
+      self.raf = global.requestAnimationFrame(step);
+    };
+    this.raf = global.requestAnimationFrame(step);
+  };
+
+  Player.prototype.stop = function () {
+    if (this.raf) global.cancelAnimationFrame(this.raf);
+    this.raf = null;
+  };
+
+  Player.prototype.toggle = function () {
+    this.paused = !this.paused;
+    return !this.paused;
+  };
+
+  /* Render a single still frame — used for exercise card thumbnails. */
+  function thumbnail(canvas, motionKey, t) {
+    var p = new Player(canvas, { motion: motionKey });
+    p.t = t === undefined ? 0.45 : t;
+    p.render();
+    return p;
+  }
+
+  global.Anim = {
+    MOTIONS: MOTIONS,
+    detect: detect,
+    list: list,
+    get: get,
+    Player: Player,
+    thumbnail: thumbnail,
+    poseAt: poseAt
+  };
+})(window);
+
+
+/* ===== assets/js/store.js ===== */
+/*
+ * store.js — persistence for exercises, routines and workout history.
+ * Everything lives in localStorage; there is no server and nothing leaves the
+ * browser. Export/import gives the user a way to move or back up their data.
+ */
+(function (global) {
+  'use strict';
+
+  var KEY = 'fitforge.v1';
+
+  var DEFAULT_STATE = {
+    exercises: [],
+    routines: [],
+    history: [],
+    seeded: false
+  };
+
+  var state = null;
+  var listeners = [];
+
+  function uid(prefix) {
+    return (prefix || 'id') + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  }
+
+  function load() {
+    if (state) return state;
+    try {
+      var raw = global.localStorage.getItem(KEY);
+      state = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      state = null;
+    }
+    if (!state || typeof state !== 'object') state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    Object.keys(DEFAULT_STATE).forEach(function (k) {
+      if (state[k] === undefined) state[k] = JSON.parse(JSON.stringify(DEFAULT_STATE[k]));
+    });
+    if (!state.seeded && state.exercises.length === 0) {
+      state.exercises = seedExercises();
+      state.routines = seedRoutines(state.exercises);
+      state.seeded = true;
+      save();
+    }
+    return state;
+  }
+
+  function save() {
+    try {
+      global.localStorage.setItem(KEY, JSON.stringify(state));
+    } catch (e) {
+      // Most likely the 5MB quota, which uploaded GIFs can eat quickly.
+      global.alert('Could not save: browser storage is full. Try removing a large uploaded GIF or video from an exercise.');
+      return false;
+    }
+    listeners.forEach(function (fn) { fn(state); });
+    return true;
+  }
+
+  function subscribe(fn) { listeners.push(fn); }
+
+  /* ------------------------------------------------------------- exercises */
+
+  function exercises() { return load().exercises; }
+
+  function getExercise(id) {
+    return load().exercises.filter(function (e) { return e.id === id; })[0] || null;
+  }
+
+  function blankExercise() {
+    return {
+      id: null,
+      name: '',
+      category: 'Strength',
+      muscles: '',
+      equipment: '',
+      notes: '',
+      defaultMode: 'reps',
+      defaultReps: 10,
+      defaultSets: 3,
+      defaultSeconds: 40,
+      defaultRest: 60,
+      media: { type: 'animation', preset: 'auto', tempo: 2.4, url: '', dataUrl: '', title: '' }
+    };
+  }
+
+  function saveExercise(ex) {
+    var st = load();
+    if (!ex.id) {
+      ex.id = uid('ex');
+      ex.createdAt = Date.now();
+      st.exercises.push(ex);
+    } else {
+      for (var i = 0; i < st.exercises.length; i++) {
+        if (st.exercises[i].id === ex.id) { st.exercises[i] = ex; break; }
+      }
+    }
+    save();
+    return ex;
+  }
+
+  function deleteExercise(id) {
+    var st = load();
+    st.exercises = st.exercises.filter(function (e) { return e.id !== id; });
+    st.routines.forEach(function (r) {
+      r.items = r.items.filter(function (it) { return it.exerciseId !== id; });
+    });
+    save();
+  }
+
+  /* --------------------------------------------------------------- routines */
+
+  function routines() { return load().routines; }
+
+  function getRoutine(id) {
+    return load().routines.filter(function (r) { return r.id === id; })[0] || null;
+  }
+
+  function blankRoutine() {
+    return { id: null, name: '', description: '', items: [] };
+  }
+
+  function saveRoutine(r) {
+    var st = load();
+    if (!r.id) {
+      r.id = uid('rt');
+      r.createdAt = Date.now();
+      st.routines.push(r);
+    } else {
+      for (var i = 0; i < st.routines.length; i++) {
+        if (st.routines[i].id === r.id) { st.routines[i] = r; break; }
+      }
+    }
+    save();
+    return r;
+  }
+
+  function deleteRoutine(id) {
+    var st = load();
+    st.routines = st.routines.filter(function (r) { return r.id !== id; });
+    save();
+  }
+
+  function newItem(exerciseId) {
+    var ex = getExercise(exerciseId);
+    return {
+      uid: uid('it'),
+      exerciseId: exerciseId,
+      mode: ex ? ex.defaultMode : 'reps',
+      sets: ex ? ex.defaultSets : 3,
+      reps: ex ? ex.defaultReps : 10,
+      seconds: ex ? ex.defaultSeconds : 40,
+      rest: ex ? ex.defaultRest : 60
+    };
+  }
+
+  /* Rough time estimate for a routine, in seconds. Rep-based sets are costed
+   * at ~3.5s per rep, which is close enough for planning. */
+  function estimateSeconds(routine) {
+    var total = 0;
+    routine.items.forEach(function (it) {
+      var work = it.mode === 'time' ? it.seconds : it.reps * 3.5;
+      total += it.sets * work + it.sets * it.rest;
+    });
+    return Math.round(total);
+  }
+
+  /* ---------------------------------------------------------------- history */
+
+  function history() { return load().history; }
+
+  function logSession(entry) {
+    var st = load();
+    st.history.unshift({
+      id: uid('h'),
+      routineId: entry.routineId,
+      routineName: entry.routineName,
+      finishedAt: Date.now(),
+      seconds: entry.seconds,
+      completed: entry.completed,
+      total: entry.total
+    });
+    st.history = st.history.slice(0, 200);
+    save();
+  }
+
+  function clearHistory() {
+    load().history = [];
+    save();
+  }
+
+  /* ------------------------------------------------------------ import/export */
+
+  function exportJSON() {
+    return JSON.stringify(load(), null, 2);
+  }
+
+  function importJSON(text) {
+    var parsed = JSON.parse(text);
+    if (!parsed || !Array.isArray(parsed.exercises) || !Array.isArray(parsed.routines)) {
+      throw new Error('That file does not look like a FitForge backup.');
+    }
+    state = {
+      exercises: parsed.exercises,
+      routines: parsed.routines,
+      history: Array.isArray(parsed.history) ? parsed.history : [],
+      seeded: true
+    };
+    save();
+  }
+
+  function resetAll() {
+    state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    save();
+    state = null;
+    load();
+  }
+
+  /* ------------------------------------------------------------------ seed */
+
+  function mk(name, category, muscles, equipment, mode, opts) {
+    var e = blankExercise();
+    e.id = uid('ex');
+    e.createdAt = Date.now();
+    e.name = name;
+    e.category = category;
+    e.muscles = muscles;
+    e.equipment = equipment;
+    e.defaultMode = mode;
+    Object.keys(opts || {}).forEach(function (k) { e[k] = opts[k]; });
+    return e;
+  }
+
+  function seedExercises() {
+    return [
+      mk('Bodyweight Squat', 'Strength', 'Quads, glutes', 'None', 'reps', { defaultReps: 15 }),
+      mk('Push-up', 'Strength', 'Chest, triceps', 'None', 'reps', { defaultReps: 12 }),
+      mk('Forward Lunge', 'Strength', 'Quads, glutes', 'None', 'reps', { defaultReps: 10 }),
+      mk('Plank', 'Core', 'Core', 'None', 'time', { defaultSeconds: 45, defaultSets: 3 }),
+      mk('Glute Bridge', 'Strength', 'Glutes, hamstrings', 'None', 'reps', { defaultReps: 15 }),
+      mk('Jumping Jacks', 'Cardio', 'Full body', 'None', 'time', { defaultSeconds: 40, defaultSets: 2 }),
+      mk('Mountain Climbers', 'Cardio', 'Core, shoulders', 'None', 'time', { defaultSeconds: 30, defaultSets: 3 }),
+      mk('Crunch', 'Core', 'Abs', 'None', 'reps', { defaultReps: 20 }),
+      mk('Dumbbell Biceps Curl', 'Strength', 'Biceps', 'Dumbbells', 'reps', { defaultReps: 12 }),
+      mk('Overhead Press', 'Strength', 'Shoulders', 'Dumbbells', 'reps', { defaultReps: 10 }),
+      mk('Bent-Over Row', 'Strength', 'Back, biceps', 'Dumbbells', 'reps', { defaultReps: 12 }),
+      mk('Romanian Deadlift', 'Strength', 'Hamstrings, glutes', 'Barbell', 'reps', { defaultReps: 10 }),
+      mk('Pull-up', 'Strength', 'Back, biceps', 'Bar', 'reps', { defaultReps: 6 }),
+      mk('High Knees', 'Cardio', 'Legs, core', 'None', 'time', { defaultSeconds: 30, defaultSets: 3 }),
+      mk('Burpee', 'Cardio', 'Full body', 'None', 'reps', { defaultReps: 10 }),
+      mk('Standing Calf Raise', 'Strength', 'Calves', 'None', 'reps', { defaultReps: 20 }),
+      mk('Full Body Stretch', 'Mobility', 'Full body', 'None', 'time', { defaultSeconds: 60, defaultSets: 1, defaultRest: 15 })
+    ];
+  }
+
+  function seedRoutines(exs) {
+    function idOf(name) {
+      var m = exs.filter(function (e) { return e.name === name; })[0];
+      return m ? m.id : null;
+    }
+    function items(names) {
+      return names.map(function (n) {
+        var it = { uid: uid('it'), exerciseId: idOf(n) };
+        var ex = exs.filter(function (e) { return e.id === it.exerciseId; })[0];
+        it.mode = ex.defaultMode;
+        it.sets = ex.defaultSets;
+        it.reps = ex.defaultReps;
+        it.seconds = ex.defaultSeconds;
+        it.rest = ex.defaultRest;
+        return it;
+      }).filter(function (it) { return it.exerciseId; });
+    }
+    return [
+      {
+        id: uid('rt'),
+        createdAt: Date.now(),
+        name: 'Full Body Starter',
+        description: 'Three rounds of the basics. No equipment needed.',
+        items: items(['Jumping Jacks', 'Bodyweight Squat', 'Push-up', 'Bent-Over Row', 'Plank', 'Full Body Stretch'])
+      },
+      {
+        id: uid('rt'),
+        createdAt: Date.now(),
+        name: 'Core & Cardio Blast',
+        description: 'Short, sharp and sweaty — about 20 minutes.',
+        items: items(['High Knees', 'Mountain Climbers', 'Crunch', 'Glute Bridge', 'Burpee', 'Plank'])
+      }
+    ];
+  }
+
+  global.Store = {
+    uid: uid,
+    load: load,
+    save: save,
+    subscribe: subscribe,
+    exercises: exercises,
+    getExercise: getExercise,
+    blankExercise: blankExercise,
+    saveExercise: saveExercise,
+    deleteExercise: deleteExercise,
+    routines: routines,
+    getRoutine: getRoutine,
+    blankRoutine: blankRoutine,
+    saveRoutine: saveRoutine,
+    deleteRoutine: deleteRoutine,
+    newItem: newItem,
+    estimateSeconds: estimateSeconds,
+    history: history,
+    logSession: logSession,
+    clearHistory: clearHistory,
+    exportJSON: exportJSON,
+    importJSON: importJSON,
+    resetAll: resetAll
+  };
+})(window);
+
+
+/* ===== assets/js/media.js ===== */
+/*
+ * media.js — everything to do with an exercise's demonstration.
+ *
+ * Three sources are supported:
+ *   1. animation — generated locally by anim.js, no network needed
+ *   2. link      — a YouTube/Vimeo URL, a direct .gif/.mp4/.webm, or an image
+ *   3. upload    — a small file the user picked, kept as a data URL
+ *
+ * Plus helpers to build "find me a demo" search URLs, which open the relevant
+ * site in a new tab with a sensible query already filled in.
+ */
+(function (global) {
+  'use strict';
+
+  function classify(url) {
+    var u = String(url || '').trim();
+    if (!u) return { kind: 'none' };
+    if (u.indexOf('data:') === 0) {
+      if (u.indexOf('data:video') === 0) return { kind: 'video', src: u };
+      return { kind: 'image', src: u };
+    }
+
+    var yt = u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{6,})/);
+    if (yt) return { kind: 'youtube', id: yt[1], src: 'https://www.youtube.com/embed/' + yt[1] + '?rel=0&modestbranding=1' };
+
+    var vimeo = u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeo) return { kind: 'vimeo', id: vimeo[1], src: 'https://player.vimeo.com/video/' + vimeo[1] };
+
+    // Giphy page links (…/gifs/slug-ID) can be turned into a direct GIF.
+    var giphy = u.match(/giphy\.com\/(?:gifs|clips)\/(?:[\w-]*-)?(\w{8,})/);
+    if (giphy) return { kind: 'image', src: 'https://media.giphy.com/media/' + giphy[1] + '/giphy.gif' };
+
+    var path = u.split('?')[0].split('#')[0].toLowerCase();
+    if (/\.(mp4|webm|ogv|ogg|mov)$/.test(path)) return { kind: 'video', src: u };
+    if (/\.(gif|png|jpe?g|webp|avif|svg)$/.test(path)) return { kind: 'image', src: u };
+
+    return { kind: 'link', src: u };
+  }
+
+  function searchQuery(name) {
+    return String(name || 'exercise').trim() + ' exercise how to proper form';
+  }
+
+  function searchLinks(name) {
+    var q = encodeURIComponent(searchQuery(name));
+    var gq = encodeURIComponent(String(name || 'exercise').trim() + ' exercise');
+    return [
+      { label: 'YouTube', hint: 'Full video demos and coaching cues', url: 'https://www.youtube.com/results?search_query=' + q },
+      { label: 'Google Images', hint: 'Photos and animated GIFs', url: 'https://www.google.com/search?tbm=isch&q=' + q },
+      { label: 'GIPHY', hint: 'Looping GIFs — right-click to copy the GIF address', url: 'https://giphy.com/search/' + gq },
+      { label: 'Tenor', hint: 'Another good source of exercise GIFs', url: 'https://tenor.com/search/' + gq + '-gifs' }
+    ];
+  }
+
+  /* Build the DOM node that shows a demo. Animations return a live canvas with
+   * an anim.js player attached at node._player so callers can stop it. */
+  function render(exercise, opts) {
+    opts = opts || {};
+    var media = exercise.media || { type: 'animation', preset: 'auto' };
+    var wrap = document.createElement('div');
+    wrap.className = 'media' + (opts.large ? ' media-lg' : '');
+
+    if (media.type === 'animation' || media.type === undefined) {
+      var canvas = document.createElement('canvas');
+      canvas.className = 'anim-canvas';
+      wrap.appendChild(canvas);
+      var preset = presetFor(exercise);
+      // The canvas needs a measured size before the player scales itself, so
+      // set up on the next frame once it is in the document.
+      requestAnimationFrame(function () {
+        // The wrapper may already have been torn down while we waited a frame.
+        if (wrap._stopped || !document.body.contains(canvas)) return;
+        var player = new Anim.Player(canvas, { motion: preset, tempo: media.tempo || 2.4 });
+        wrap._player = player;
+        if (opts.autoplay !== false) player.start(); else player.render();
+      });
+      wrap.dataset.kind = 'animation';
+      return wrap;
+    }
+
+    var src = media.type === 'upload' ? media.dataUrl : media.url;
+    var info = classify(src);
+
+    if (info.kind === 'youtube' || info.kind === 'vimeo') {
+      var frame = document.createElement('iframe');
+      frame.src = info.src;
+      frame.title = exercise.name + ' demonstration';
+      frame.allow = 'accelerometer; encrypted-media; picture-in-picture; fullscreen';
+      frame.allowFullscreen = true;
+      frame.loading = 'lazy';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      wrap.appendChild(frame);
+    } else if (info.kind === 'video') {
+      var vid = document.createElement('video');
+      vid.src = info.src;
+      vid.autoplay = opts.autoplay !== false;
+      vid.loop = true;
+      vid.muted = true;
+      vid.playsInline = true;
+      vid.controls = !!opts.large;
+      wrap.appendChild(vid);
+    } else if (info.kind === 'image') {
+      var img = document.createElement('img');
+      img.src = info.src;
+      img.alt = exercise.name + ' demonstration';
+      img.loading = 'lazy';
+      img.onerror = function () {
+        wrap.innerHTML = '';
+        wrap.appendChild(fallback('That image could not be loaded.', src));
+      };
+      wrap.appendChild(img);
+    } else if (info.kind === 'link') {
+      wrap.appendChild(fallback('This link cannot be embedded — open it in a new tab.', src));
+    } else {
+      wrap.appendChild(fallback('No demonstration set for this exercise yet.', ''));
+    }
+
+    wrap.dataset.kind = info.kind;
+    return wrap;
+  }
+
+  function fallback(message, url) {
+    var box = document.createElement('div');
+    box.className = 'media-fallback';
+    var p = document.createElement('p');
+    p.textContent = message;
+    box.appendChild(p);
+    if (url) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'btn btn-ghost btn-sm';
+      a.textContent = 'Open link';
+      box.appendChild(a);
+    }
+    return box;
+  }
+
+  function presetFor(exercise) {
+    var m = exercise.media || {};
+    if (m.preset && m.preset !== 'auto') return m.preset;
+    return Anim.detect(exercise.name);
+  }
+
+  function describe(exercise) {
+    var m = exercise.media || {};
+    if (!m.type || m.type === 'animation') {
+      var key = presetFor(exercise);
+      return 'Animated · ' + Anim.get(key).label;
+    }
+    if (m.type === 'upload') return 'Uploaded file' + (m.title ? ' · ' + m.title : '');
+    var info = classify(m.url);
+    if (info.kind === 'youtube') return 'YouTube video';
+    if (info.kind === 'vimeo') return 'Vimeo video';
+    if (info.kind === 'image') return 'GIF / image';
+    if (info.kind === 'video') return 'Video file';
+    if (info.kind === 'link') return 'External link';
+    return 'No demo';
+  }
+
+  /* Shut down anything still running inside `node` — animation loops, videos
+   * and embeds. Called before a view or modal is torn down; without it the
+   * requestAnimationFrame loops would keep drawing to detached canvases. */
+  function stop(node) {
+    if (!node) return;
+    node._stopped = true;
+    if (node._player) node._player.stop();
+    var nested = node.querySelectorAll ? node.querySelectorAll('.media') : [];
+    Array.prototype.forEach.call(nested, function (m) {
+      m._stopped = true;
+      if (m._player) m._player.stop();
+    });
+    var vids = node.querySelectorAll ? node.querySelectorAll('video') : [];
+    Array.prototype.forEach.call(vids, function (v) { try { v.pause(); } catch (e) {} });
+    // Detaching the iframe src stops YouTube playback.
+    var frames = node.querySelectorAll ? node.querySelectorAll('iframe') : [];
+    Array.prototype.forEach.call(frames, function (f) { f.src = 'about:blank'; });
+  }
+
+  global.Media = {
+    classify: classify,
+    searchLinks: searchLinks,
+    searchQuery: searchQuery,
+    render: render,
+    describe: describe,
+    presetFor: presetFor,
+    stop: stop
+  };
+})(window);
+
+
+/* ===== assets/js/ui.js ===== */
+/* ui.js — small DOM helpers shared by the rest of the app. */
+(function (global) {
+  'use strict';
+
+  /* el('div.card', {onclick: fn}, ['text', childNode]) */
+  function el(spec, attrs, children) {
+    var parts = String(spec).split(/(?=[.#])/);
+    var node = document.createElement(parts.shift() || 'div');
+    parts.forEach(function (p) {
+      if (p[0] === '.') node.classList.add(p.slice(1));
+      else if (p[0] === '#') node.id = p.slice(1);
+    });
+    if (attrs && (typeof attrs !== 'object' || Array.isArray(attrs))) {
+      children = attrs;
+      attrs = null;
+    }
+    Object.keys(attrs || {}).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k.indexOf('on') === 0 && typeof v === 'function') node.addEventListener(k.slice(2), v);
+      else if (k === 'text') node.textContent = v;
+      else if (k === 'html') node.innerHTML = v;
+      else if (k === 'dataset') Object.keys(v).forEach(function (d) { node.dataset[d] = v[d]; });
+      else if (k === 'value') node.value = v;
+      else if (k === 'checked' || k === 'selected' || k === 'disabled') node[k] = !!v;
+      else node.setAttribute(k, v);
+    });
+    append(node, children);
+    return node;
+  }
+
+  function append(node, children) {
+    if (children === null || children === undefined || children === false) return;
+    if (Array.isArray(children)) {
+      children.forEach(function (c) { append(node, c); });
+      return;
+    }
+    node.appendChild(children.nodeType ? children : document.createTextNode(String(children)));
+  }
+
+  function clear(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+    return node;
+  }
+
+  function field(label, control, hint) {
+    return el('label.field', [
+      el('span.field-label', { text: label }),
+      control,
+      hint ? el('span.field-hint', { text: hint }) : null
+    ]);
+  }
+
+  function select(options, value, onchange) {
+    var s = el('select', { onchange: onchange });
+    options.forEach(function (o) {
+      s.appendChild(el('option', { value: o.value, text: o.label, selected: String(o.value) === String(value) }));
+    });
+    s.value = value;
+    return s;
+  }
+
+  function icon(name) {
+    var paths = {
+      play: 'M8 5v14l11-7z',
+      plus: 'M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z',
+      edit: 'M3 17.25V21h3.75L17.8 9.94l-3.75-3.75zM20.7 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z',
+      trash: 'M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6zM19 4h-3.5l-1-1h-5l-1 1H5v2h14z',
+      up: 'M12 8l6 6H6z',
+      down: 'M12 16l-6-6h12z',
+      close: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+      search: 'M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z',
+      dumbbell: 'M4 8h2.5v8H4zm-2.5 2.5H4v3H1.5zM17.5 8H20v8h-2.5zM20 10.5h2.5v3H20zM6.5 11h11v2h-11z',
+      home: 'M12 3 3 10.5V21h6v-6h6v6h6V10.5z',
+      list: 'M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z',
+      chart: 'M4 20h16v-2H4zm2-4h3V8H6zm5 0h3V4h-3zm5 0h3v-6h-3z'
+    };
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('class', 'icon');
+    svg.setAttribute('aria-hidden', 'true');
+    var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', paths[name] || paths.list);
+    p.setAttribute('fill', 'currentColor');
+    svg.appendChild(p);
+    return svg;
+  }
+
+  function fmtDuration(seconds) {
+    seconds = Math.max(0, Math.round(seconds));
+    var m = Math.floor(seconds / 60), s = seconds % 60;
+    if (m >= 60) {
+      var h = Math.floor(m / 60);
+      return h + 'h ' + (m % 60) + 'm';
+    }
+    if (m === 0) return s + 's';
+    return m + 'm' + (s ? ' ' + s + 's' : '');
+  }
+
+  function clock(seconds) {
+    seconds = Math.max(0, Math.ceil(seconds));
+    var m = Math.floor(seconds / 60), s = seconds % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function fmtDate(ts) {
+    var d = new Date(ts);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' +
+      d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /* ------------------------------------------------------------------ modal */
+
+  var openModals = [];
+
+  function modal(title, bodyNode, footerNode, onClose) {
+    var overlay = el('div.modal-overlay');
+    var close = function () {
+      if (overlay._closed) return;
+      overlay._closed = true;
+      Media.stop(overlay);
+      overlay.remove();
+      openModals = openModals.filter(function (m) { return m !== overlay; });
+      document.body.classList.toggle('no-scroll', openModals.length > 0);
+      if (onClose) onClose();
+    };
+    var box = el('div.modal', [
+      el('header.modal-head', [
+        el('h2', { text: title }),
+        el('button.icon-btn', { type: 'button', 'aria-label': 'Close', onclick: close }, icon('close'))
+      ]),
+      el('div.modal-body', [bodyNode]),
+      footerNode ? el('footer.modal-foot', [footerNode]) : null
+    ]);
+    overlay.appendChild(box);
+    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) close(); });
+    document.body.appendChild(overlay);
+    document.body.classList.add('no-scroll');
+    openModals.push(overlay);
+    overlay._close = close;
+    return { node: overlay, close: close, body: box.querySelector('.modal-body') };
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && openModals.length) {
+      openModals[openModals.length - 1]._close();
+    }
+  });
+
+  function confirmDialog(message, onYes) {
+    var m = modal('Are you sure?', el('p.confirm-text', { text: message }), el('div.row-end', [
+      el('button.btn.btn-ghost', { type: 'button', text: 'Cancel', onclick: function () { m.close(); } }),
+      el('button.btn.btn-danger', {
+        type: 'button', text: 'Delete', onclick: function () { m.close(); onYes(); }
+      })
+    ]));
+  }
+
+  function toast(message) {
+    var t = el('div.toast', { text: message });
+    document.body.appendChild(t);
+    requestAnimationFrame(function () { t.classList.add('show'); });
+    setTimeout(function () {
+      t.classList.remove('show');
+      setTimeout(function () { t.remove(); }, 300);
+    }, 2400);
+  }
+
+  function empty(title, message, action) {
+    return el('div.empty', [
+      el('h3', { text: title }),
+      el('p', { text: message }),
+      action || null
+    ]);
+  }
+
+  global.UI = {
+    el: el, clear: clear, field: field, select: select, icon: icon,
+    fmtDuration: fmtDuration, clock: clock, fmtDate: fmtDate,
+    modal: modal, confirmDialog: confirmDialog, toast: toast, empty: empty
+  };
+})(window);
+
+
+/* ===== assets/js/exercises.js ===== */
+/*
+ * exercises.js — the exercise library and the exercise editor.
+ * The editor is where the "how do I do this?" demo gets attached, via the
+ * demo picker: search the web, paste a link, upload a file, or generate an
+ * animation locally.
+ */
+(function (global) {
+  'use strict';
+
+  var el = UI.el;
+  var filter = { text: '', category: 'All' };
+
+  function categories() {
+    var set = {};
+    Store.exercises().forEach(function (e) { if (e.category) set[e.category] = true; });
+    return ['All'].concat(Object.keys(set).sort());
+  }
+
+  function matches(ex) {
+    if (filter.category !== 'All' && ex.category !== filter.category) return false;
+    if (!filter.text) return true;
+    var hay = (ex.name + ' ' + ex.muscles + ' ' + ex.equipment + ' ' + ex.notes).toLowerCase();
+    return hay.indexOf(filter.text.toLowerCase()) !== -1;
+  }
+
+  function render(root) {
+    UI.clear(root);
+
+    var list = el('div.grid');
+
+    var search = el('input.input', {
+      type: 'search', placeholder: 'Search exercises…', value: filter.text,
+      oninput: function (e) { filter.text = e.target.value; paint(); }
+    });
+
+    var cats = el('div.chips');
+    function paintChips() {
+      UI.clear(cats);
+      categories().forEach(function (c) {
+        cats.appendChild(el('button.chip' + (filter.category === c ? '.chip-on' : ''), {
+          type: 'button', text: c,
+          onclick: function () { filter.category = c; paint(); }
+        }));
+      });
+    }
+
+    root.appendChild(el('div.page-head', [
+      el('div', [
+        el('h1', { text: 'Exercises' }),
+        el('p.sub', { text: 'Your library. Every exercise can carry a video, GIF or generated animation.' })
+      ]),
+      el('button.btn.btn-primary', {
+        type: 'button', onclick: function () { edit(null); }
+      }, [UI.icon('plus'), 'New exercise'])
+    ]));
+    root.appendChild(el('div.toolbar', [search, cats]));
+    root.appendChild(list);
+
+    function paint() {
+      paintChips();
+      UI.clear(list);
+      var items = Store.exercises().filter(matches);
+      if (!items.length) {
+        list.appendChild(UI.empty(
+          'Nothing here yet',
+          Store.exercises().length ? 'No exercise matches that filter.' : 'Add your first exercise to get started.',
+          el('button.btn.btn-primary', { type: 'button', text: 'New exercise', onclick: function () { edit(null); } })
+        ));
+        return;
+      }
+      items.forEach(function (ex) { list.appendChild(card(ex)); });
+    }
+
+    paint();
+    root._repaint = paint;
+  }
+
+  function card(ex) {
+    var thumb = el('div.card-thumb');
+    var preset = Media.presetFor(ex);
+    var media = ex.media || {};
+    var isAnim = !media.type || media.type === 'animation';
+
+    if (isAnim) {
+      var canvas = el('canvas.anim-canvas');
+      thumb.appendChild(canvas);
+      requestAnimationFrame(function () { Anim.thumbnail(canvas, preset, 0.45); });
+    } else {
+      var node = Media.render(ex, { autoplay: false });
+      thumb.appendChild(node);
+    }
+
+    var node = el('article.card', [
+      thumb,
+      el('div.card-body', [
+        el('h3', { text: ex.name }),
+        el('p.card-meta', { text: [ex.category, ex.muscles].filter(Boolean).join(' · ') }),
+        el('p.card-media', { text: Media.describe(ex) }),
+        el('p.card-default', {
+          text: ex.defaultMode === 'time'
+            ? ex.defaultSets + ' × ' + ex.defaultSeconds + 's'
+            : ex.defaultSets + ' × ' + ex.defaultReps + ' reps'
+        })
+      ]),
+      el('div.card-actions', [
+        el('button.btn.btn-ghost.btn-sm', { type: 'button', text: 'Demo', onclick: function () { preview(ex); } }),
+        el('button.icon-btn', { type: 'button', 'aria-label': 'Edit', onclick: function () { edit(ex); } }, UI.icon('edit')),
+        el('button.icon-btn.danger', {
+          type: 'button', 'aria-label': 'Delete',
+          onclick: function () {
+            UI.confirmDialog('Delete "' + ex.name + '"? It will also be removed from any routines.', function () {
+              Store.deleteExercise(ex.id);
+              App.refresh();
+              UI.toast('Exercise deleted');
+            });
+          }
+        }, UI.icon('trash'))
+      ])
+    ]);
+    return node;
+  }
+
+  /* Big demo view for a single exercise. */
+  function preview(ex) {
+    var media = Media.render(ex, { large: true, autoplay: true });
+    var body = el('div', [
+      media,
+      el('p.demo-caption', { text: Media.describe(ex) }),
+      (!ex.media || ex.media.type === 'animation')
+        ? el('p.demo-cue', { text: Anim.get(Media.presetFor(ex)).cue })
+        : null,
+      ex.notes ? el('p.demo-notes', { text: ex.notes }) : null,
+      el('dl.spec', [
+        el('div', [el('dt', { text: 'Category' }), el('dd', { text: ex.category || '—' })]),
+        el('div', [el('dt', { text: 'Muscles' }), el('dd', { text: ex.muscles || '—' })]),
+        el('div', [el('dt', { text: 'Equipment' }), el('dd', { text: ex.equipment || '—' })])
+      ])
+    ]);
+    var footer = el('div.row-end', [
+      el('button.btn.btn-ghost', { type: 'button', text: 'Edit', onclick: function () { m.close(); edit(ex); } })
+    ]);
+    var m = UI.modal(ex.name, body, footer);
+  }
+
+  /* -------------------------------------------------------------- the editor */
+
+  function edit(existing) {
+    var ex = existing
+      ? JSON.parse(JSON.stringify(existing))
+      : Store.blankExercise();
+    if (!ex.media) ex.media = { type: 'animation', preset: 'auto', tempo: 2.4, url: '', dataUrl: '', title: '' };
+
+    var nameInput = el('input.input', {
+      type: 'text', placeholder: 'e.g. Bulgarian split squat', value: ex.name,
+      oninput: function (e) {
+        ex.name = e.target.value;
+        onNameChanged();
+      }
+    });
+
+    var form = el('div.form', [
+      UI.field('Exercise name', nameInput),
+      el('div.form-row', [
+        UI.field('Category', el('input.input', {
+          type: 'text', list: 'category-list', value: ex.category,
+          oninput: function (e) { ex.category = e.target.value; }
+        })),
+        UI.field('Equipment', el('input.input', {
+          type: 'text', placeholder: 'None, dumbbells…', value: ex.equipment,
+          oninput: function (e) { ex.equipment = e.target.value; }
+        }))
+      ]),
+      UI.field('Muscles worked', el('input.input', {
+        type: 'text', placeholder: 'Quads, glutes…', value: ex.muscles,
+        oninput: function (e) { ex.muscles = e.target.value; }
+      })),
+      UI.field('Notes / form cues', el('textarea.input', {
+        rows: 2, placeholder: 'Anything you want reminding of mid-set.',
+        oninput: function (e) { ex.notes = e.target.value; }
+      }, ex.notes)),
+      el('div.form-row', [
+        UI.field('Default tracking', UI.select(
+          [{ value: 'reps', label: 'Reps' }, { value: 'time', label: 'Time' }],
+          ex.defaultMode,
+          function (e) { ex.defaultMode = e.target.value; paintDefaults(); }
+        )),
+        el('div.form-slot')
+      ])
+    ]);
+
+    var defaults = el('div.form-row');
+    function paintDefaults() {
+      UI.clear(defaults);
+      defaults.appendChild(UI.field('Sets', el('input.input', {
+        type: 'number', min: 1, max: 20, value: ex.defaultSets,
+        oninput: function (e) { ex.defaultSets = Math.max(1, +e.target.value || 1); }
+      })));
+      if (ex.defaultMode === 'time') {
+        defaults.appendChild(UI.field('Seconds', el('input.input', {
+          type: 'number', min: 5, max: 600, step: 5, value: ex.defaultSeconds,
+          oninput: function (e) { ex.defaultSeconds = Math.max(5, +e.target.value || 5); }
+        })));
+      } else {
+        defaults.appendChild(UI.field('Reps', el('input.input', {
+          type: 'number', min: 1, max: 200, value: ex.defaultReps,
+          oninput: function (e) { ex.defaultReps = Math.max(1, +e.target.value || 1); }
+        })));
+      }
+      defaults.appendChild(UI.field('Rest (s)', el('input.input', {
+        type: 'number', min: 0, max: 600, step: 5, value: ex.defaultRest,
+        oninput: function (e) { ex.defaultRest = Math.max(0, +e.target.value || 0); }
+      })));
+    }
+    paintDefaults();
+    form.appendChild(defaults);
+
+    var demo = demoPicker(ex, function () { /* name changes repaint search links */ });
+    form.appendChild(demo.node);
+
+    function onNameChanged() { demo.nameChanged(); }
+
+    var footer = el('div.row-end', [
+      el('button.btn.btn-ghost', { type: 'button', text: 'Cancel', onclick: function () { m.close(); } }),
+      el('button.btn.btn-primary', {
+        type: 'button', text: existing ? 'Save changes' : 'Add exercise',
+        onclick: function () {
+          if (!ex.name.trim()) {
+            nameInput.focus();
+            UI.toast('Give the exercise a name first');
+            return;
+          }
+          Store.saveExercise(ex);
+          m.close();
+          App.refresh();
+          UI.toast(existing ? 'Exercise updated' : 'Exercise added');
+        }
+      })
+    ]);
+
+    var m = UI.modal(existing ? 'Edit exercise' : 'New exercise', form, footer);
+    setTimeout(function () { nameInput.focus(); }, 30);
+  }
+
+  /* ---------------------------------------------------------- demo picker */
+
+  /* The headline feature: four ways to answer "how do I do this exercise?" */
+  function demoPicker(ex, onchange) {
+    var media = ex.media;
+    var tabsWrap = el('div.tabs');
+    var panel = el('div.tab-panel');
+    var previewWrap = el('div.demo-preview');
+
+    var TABS = [
+      { key: 'animation', label: 'Generate animation' },
+      { key: 'search', label: 'Search the web' },
+      { key: 'link', label: 'Paste a link' },
+      { key: 'upload', label: 'Upload a file' }
+    ];
+    // "search" is a way of getting to a link, so an exercise saved with a URL
+    // reopens on the link tab.
+    var active = media.type === 'upload' ? 'upload' : (media.type === 'link' ? 'link' : 'animation');
+
+    function setActive(key) {
+      active = key;
+      paintTabs();
+      paintPanel();
+    }
+
+    function paintTabs() {
+      UI.clear(tabsWrap);
+      TABS.forEach(function (t) {
+        tabsWrap.appendChild(el('button.tab' + (active === t.key ? '.tab-on' : ''), {
+          type: 'button', text: t.label,
+          onclick: function () { setActive(t.key); }
+        }));
+      });
+    }
+
+    function refreshPreview() {
+      Media.stop(previewWrap);
+      UI.clear(previewWrap);
+      previewWrap.appendChild(Media.render(ex, { autoplay: true }));
+      previewWrap.appendChild(el('p.demo-caption', { text: Media.describe(ex) }));
+    }
+
+    function paintPanel() {
+      UI.clear(panel);
+      if (active === 'animation') panel.appendChild(animationPanel());
+      else if (active === 'search') panel.appendChild(searchPanel());
+      else if (active === 'link') panel.appendChild(linkPanel());
+      else panel.appendChild(uploadPanel());
+    }
+
+    /* 1. Generate — build the demo locally with the stick-figure engine. */
+    function animationPanel() {
+      var detected = Anim.detect(ex.name);
+      var presetOptions = [{ value: 'auto', label: 'Auto-detect from name (' + Anim.get(detected).label + ')' }]
+        .concat(Anim.list().map(function (m) { return { value: m.key, label: m.label }; }));
+
+      var presetSelect = UI.select(presetOptions, media.preset || 'auto', function (e) {
+        media.type = 'animation';
+        media.preset = e.target.value;
+        refreshPreview();
+        updateCue();
+      });
+
+      var tempo = el('input.range', {
+        type: 'range', min: 0.8, max: 5, step: 0.2, value: media.tempo || 2.4,
+        oninput: function (e) {
+          media.tempo = +e.target.value;
+          tempoLabel.textContent = (+e.target.value).toFixed(1) + 's per rep';
+          if (previewWrap.querySelector('.media') && previewWrap.querySelector('.media')._player) {
+            previewWrap.querySelector('.media')._player.setTempo(media.tempo);
+          }
+        }
+      });
+      var tempoLabel = el('span.field-hint', { text: (media.tempo || 2.4).toFixed(1) + 's per rep' });
+      var cue = el('p.demo-cue');
+      function updateCue() {
+        cue.textContent = Anim.get(media.preset && media.preset !== 'auto' ? media.preset : Anim.detect(ex.name)).cue;
+      }
+      updateCue();
+
+      media.type = 'animation';
+      refreshPreview();
+
+      return el('div', [
+        el('p.panel-note', { text: 'The app draws the movement itself — no internet, no account, nothing to download. It picks a motion from the exercise name, and you can override it.' }),
+        UI.field('Motion', presetSelect),
+        UI.field('Tempo', el('div', [tempo, tempoLabel])),
+        cue
+      ]);
+    }
+
+    /* 2. Search — open a prefilled query on the sites worth searching. */
+    function searchPanel() {
+      var name = ex.name.trim();
+      var links = el('div.search-links');
+      function paintLinks() {
+        UI.clear(links);
+        if (!name) {
+          links.appendChild(el('p.panel-note', { text: 'Type an exercise name above and the search links will appear here.' }));
+          return;
+        }
+        Media.searchLinks(name).forEach(function (l) {
+          links.appendChild(el('a.search-link', { href: l.url, target: '_blank', rel: 'noopener noreferrer' }, [
+            UI.icon('search'),
+            el('span', [el('strong', { text: l.label }), el('small', { text: l.hint })])
+          ]));
+        });
+      }
+      paintLinks();
+
+      var paste = el('input.input', {
+        type: 'url', placeholder: 'Paste the video or GIF address here',
+        value: media.type === 'link' ? media.url : '',
+        oninput: function (e) {
+          media.type = 'link';
+          media.url = e.target.value.trim();
+          refreshPreview();
+        }
+      });
+
+      return el('div', [
+        el('p.panel-note', { text: 'Opens a new tab with the search already filled in. When you find one you like, copy its address and paste it below — for a GIF, right-click the image and choose "Copy image address".' }),
+        links,
+        UI.field('Found one? Paste it here', paste)
+      ]);
+    }
+
+    /* 3. Link — YouTube, Vimeo, a direct GIF or an MP4. */
+    function linkPanel() {
+      var input = el('input.input', {
+        type: 'url', placeholder: 'https://…',
+        value: media.type === 'link' ? media.url : '',
+        oninput: function (e) {
+          media.type = 'link';
+          media.url = e.target.value.trim();
+          kind.textContent = describeUrl(media.url);
+          refreshPreview();
+        }
+      });
+      var kind = el('span.field-hint', { text: describeUrl(media.type === 'link' ? media.url : '') });
+      if (media.type === 'link') refreshPreview();
+      return el('div', [
+        el('p.panel-note', { text: 'Works with YouTube and Vimeo links, GIPHY links, and direct .gif / .mp4 / .webm addresses.' }),
+        UI.field('Demo URL', input),
+        kind
+      ]);
+    }
+
+    function describeUrl(url) {
+      if (!url) return 'Nothing pasted yet.';
+      var info = Media.classify(url);
+      return {
+        youtube: 'Recognised as a YouTube video — it will embed.',
+        vimeo: 'Recognised as a Vimeo video — it will embed.',
+        image: 'Recognised as an image or GIF — it will loop.',
+        video: 'Recognised as a video file — it will loop, muted.',
+        link: 'Not embeddable, so it will show as a link you can open.'
+      }[info.kind] || 'Nothing pasted yet.';
+    }
+
+    /* 4. Upload — keep a small GIF/MP4 with the exercise. */
+    function uploadPanel() {
+      var status = el('p.field-hint', {
+        text: media.type === 'upload' && media.dataUrl ? 'Stored: ' + (media.title || 'file') : 'No file chosen.'
+      });
+      var input = el('input.input', {
+        type: 'file', accept: 'image/gif,image/*,video/mp4,video/webm',
+        onchange: function (e) {
+          var file = e.target.files && e.target.files[0];
+          if (!file) return;
+          // Browser storage is ~5MB total, so keep uploads well under that.
+          if (file.size > 2 * 1024 * 1024) {
+            status.textContent = 'That file is ' + Math.round(file.size / 1024 / 1024 * 10) / 10 +
+              'MB. Please keep uploads under 2MB, or paste a link instead.';
+            e.target.value = '';
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = function () {
+            media.type = 'upload';
+            media.dataUrl = reader.result;
+            media.title = file.name;
+            status.textContent = 'Stored: ' + file.name;
+            refreshPreview();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      if (media.type === 'upload') refreshPreview();
+      return el('div', [
+        el('p.panel-note', { text: 'Kept inside this browser only. Best for short GIFs — anything over about 2MB will not fit in browser storage.' }),
+        UI.field('Choose a GIF or video', input),
+        status
+      ]);
+    }
+
+    paintTabs();
+    paintPanel();
+
+    return {
+      node: el('section.demo-picker', [
+        el('div.demo-head', [
+          el('h3', { text: 'How to do it' }),
+          el('span.badge', { text: 'demo' })
+        ]),
+        tabsWrap,
+        panel,
+        previewWrap
+      ]),
+      nameChanged: function () {
+        if (active === 'search') paintPanel();
+        if (active === 'animation' && (!media.preset || media.preset === 'auto')) {
+          paintPanel();
+        }
+      }
+    };
+  }
+
+  global.Exercises = { render: render, edit: edit, preview: preview, card: card };
+})(window);
+
+
+/* ===== assets/js/routines.js ===== */
+/*
+ * routines.js — build an ordered routine out of exercises from the library.
+ */
+(function (global) {
+  'use strict';
+
+  var el = UI.el;
+
+  function render(root) {
+    UI.clear(root);
+
+    root.appendChild(el('div.page-head', [
+      el('div', [
+        el('h1', { text: 'Routines' }),
+        el('p.sub', { text: 'Order your exercises, set the sets, reps and rest, then press play.' })
+      ]),
+      el('button.btn.btn-primary', {
+        type: 'button', onclick: function () { edit(null); }
+      }, [UI.icon('plus'), 'New routine'])
+    ]));
+
+    var list = el('div.routine-list');
+    root.appendChild(list);
+
+    var routines = Store.routines();
+    if (!routines.length) {
+      list.appendChild(UI.empty('No routines yet', 'A routine is just a list of exercises in the order you want to do them.',
+        el('button.btn.btn-primary', { type: 'button', text: 'New routine', onclick: function () { edit(null); } })));
+      return;
+    }
+
+    routines.forEach(function (r) { list.appendChild(routineCard(r)); });
+  }
+
+  function routineCard(r) {
+    var names = r.items.map(function (it) {
+      var ex = Store.getExercise(it.exerciseId);
+      return ex ? ex.name : null;
+    }).filter(Boolean);
+
+    var strip = el('div.routine-strip');
+    r.items.slice(0, 6).forEach(function (it) {
+      var ex = Store.getExercise(it.exerciseId);
+      if (!ex) return;
+      var c = el('canvas.strip-thumb');
+      strip.appendChild(c);
+      requestAnimationFrame(function () { Anim.thumbnail(c, Media.presetFor(ex), 0.45); });
+    });
+
+    return el('article.routine-card', [
+      el('div.routine-main', [
+        el('h3', { text: r.name }),
+        r.description ? el('p.sub', { text: r.description }) : null,
+        el('p.routine-meta', {
+          text: r.items.length + ' exercise' + (r.items.length === 1 ? '' : 's') +
+            ' · about ' + UI.fmtDuration(Store.estimateSeconds(r))
+        }),
+        el('p.routine-names', { text: names.join(' → ') || 'Empty routine' }),
+        strip
+      ]),
+      el('div.routine-actions', [
+        el('button.btn.btn-primary', {
+          type: 'button', disabled: !r.items.length,
+          onclick: function () { Player.start(r); }
+        }, [UI.icon('play'), 'Start']),
+        el('button.btn.btn-ghost.btn-sm', { type: 'button', text: 'Edit', onclick: function () { edit(r); } }),
+        el('button.icon-btn.danger', {
+          type: 'button', 'aria-label': 'Delete routine',
+          onclick: function () {
+            UI.confirmDialog('Delete the routine "' + r.name + '"?', function () {
+              Store.deleteRoutine(r.id);
+              App.refresh();
+              UI.toast('Routine deleted');
+            });
+          }
+        }, UI.icon('trash'))
+      ])
+    ]);
+  }
+
+  /* ------------------------------------------------------------ the editor */
+
+  function edit(existing) {
+    var r = existing ? JSON.parse(JSON.stringify(existing)) : Store.blankRoutine();
+
+    var nameInput = el('input.input', {
+      type: 'text', placeholder: 'e.g. Monday — Push', value: r.name,
+      oninput: function (e) { r.name = e.target.value; }
+    });
+
+    var itemList = el('div.builder-list');
+    var summary = el('p.builder-summary');
+
+    function paint() {
+      UI.clear(itemList);
+      if (!r.items.length) {
+        itemList.appendChild(el('p.panel-note', { text: 'No exercises yet — add some from the picker below.' }));
+      }
+      r.items.forEach(function (it, index) {
+        itemList.appendChild(itemRow(it, index));
+      });
+      summary.textContent = r.items.length + ' exercise' + (r.items.length === 1 ? '' : 's') +
+        ' · roughly ' + UI.fmtDuration(Store.estimateSeconds(r));
+    }
+
+    function itemRow(it, index) {
+      var ex = Store.getExercise(it.exerciseId);
+      if (!ex) return el('div');
+
+      var thumb = el('canvas.row-thumb');
+      requestAnimationFrame(function () { Anim.thumbnail(thumb, Media.presetFor(ex), 0.45); });
+
+      var amount = it.mode === 'time'
+        ? UI.field('Seconds', el('input.input.input-sm', {
+            type: 'number', min: 5, max: 900, step: 5, value: it.seconds,
+            oninput: function (e) { it.seconds = Math.max(5, +e.target.value || 5); paintSummary(); }
+          }))
+        : UI.field('Reps', el('input.input.input-sm', {
+            type: 'number', min: 1, max: 200, value: it.reps,
+            oninput: function (e) { it.reps = Math.max(1, +e.target.value || 1); paintSummary(); }
+          }));
+
+      return el('div.builder-item', [
+        el('div.builder-order', [
+          el('button.icon-btn', {
+            type: 'button', 'aria-label': 'Move up', disabled: index === 0,
+            onclick: function () { move(index, -1); }
+          }, UI.icon('up')),
+          el('span.order-num', { text: String(index + 1) }),
+          el('button.icon-btn', {
+            type: 'button', 'aria-label': 'Move down', disabled: index === r.items.length - 1,
+            onclick: function () { move(index, 1); }
+          }, UI.icon('down'))
+        ]),
+        thumb,
+        el('div.builder-info', [
+          el('strong', { text: ex.name }),
+          el('span.sub', { text: Media.describe(ex) })
+        ]),
+        el('div.builder-fields', [
+          UI.field('Sets', el('input.input.input-sm', {
+            type: 'number', min: 1, max: 20, value: it.sets,
+            oninput: function (e) { it.sets = Math.max(1, +e.target.value || 1); paintSummary(); }
+          })),
+          UI.field('Type', UI.select(
+            [{ value: 'reps', label: 'Reps' }, { value: 'time', label: 'Time' }],
+            it.mode,
+            function (e) { it.mode = e.target.value; paint(); }
+          )),
+          amount,
+          UI.field('Rest (s)', el('input.input.input-sm', {
+            type: 'number', min: 0, max: 600, step: 5, value: it.rest,
+            oninput: function (e) { it.rest = Math.max(0, +e.target.value || 0); paintSummary(); }
+          }))
+        ]),
+        el('button.icon-btn.danger', {
+          type: 'button', 'aria-label': 'Remove',
+          onclick: function () { r.items.splice(index, 1); paint(); }
+        }, UI.icon('trash'))
+      ]);
+    }
+
+    function paintSummary() {
+      summary.textContent = r.items.length + ' exercise' + (r.items.length === 1 ? '' : 's') +
+        ' · roughly ' + UI.fmtDuration(Store.estimateSeconds(r));
+    }
+
+    function move(index, delta) {
+      var target = index + delta;
+      if (target < 0 || target >= r.items.length) return;
+      var tmp = r.items[index];
+      r.items[index] = r.items[target];
+      r.items[target] = tmp;
+      paint();
+    }
+
+    /* Picker: search the library and add with one tap. */
+    var pickerResults = el('div.picker-results');
+    var pickerSearch = el('input.input', {
+      type: 'search', placeholder: 'Search your exercises to add…',
+      oninput: function (e) { paintPicker(e.target.value); }
+    });
+
+    function paintPicker(query) {
+      UI.clear(pickerResults);
+      var q = (query || '').toLowerCase();
+      var found = Store.exercises().filter(function (ex) {
+        return !q || (ex.name + ' ' + ex.muscles + ' ' + ex.category).toLowerCase().indexOf(q) !== -1;
+      });
+      if (!found.length) {
+        pickerResults.appendChild(el('p.panel-note', { text: 'No matching exercise. Create it in the Exercises tab first.' }));
+        return;
+      }
+      found.forEach(function (ex) {
+        pickerResults.appendChild(el('button.picker-item', {
+          type: 'button',
+          onclick: function () {
+            r.items.push(Store.newItem(ex.id));
+            paint();
+            UI.toast(ex.name + ' added');
+          }
+        }, [
+          UI.icon('plus'),
+          el('span', [el('strong', { text: ex.name }), el('small', { text: ex.category || '' })])
+        ]));
+      });
+    }
+
+    paint();
+    paintPicker('');
+
+    var body = el('div.form', [
+      UI.field('Routine name', nameInput),
+      UI.field('Description', el('input.input', {
+        type: 'text', placeholder: 'Optional', value: r.description,
+        oninput: function (e) { r.description = e.target.value; }
+      })),
+      el('h3.section-title', { text: 'Exercises in order' }),
+      summary,
+      itemList,
+      el('h3.section-title', { text: 'Add an exercise' }),
+      pickerSearch,
+      pickerResults
+    ]);
+
+    var footer = el('div.row-end', [
+      el('button.btn.btn-ghost', { type: 'button', text: 'Cancel', onclick: function () { m.close(); } }),
+      el('button.btn.btn-primary', {
+        type: 'button', text: existing ? 'Save routine' : 'Create routine',
+        onclick: function () {
+          if (!r.name.trim()) { nameInput.focus(); UI.toast('Name the routine first'); return; }
+          Store.saveRoutine(r);
+          m.close();
+          App.refresh();
+          UI.toast(existing ? 'Routine saved' : 'Routine created');
+        }
+      })
+    ]);
+
+    var m = UI.modal(existing ? 'Edit routine' : 'New routine', body, footer);
+    setTimeout(function () { nameInput.focus(); }, 30);
+  }
+
+  global.Routines = { render: render, edit: edit };
+})(window);
+
+
+/* ===== assets/js/player.js ===== */
+/*
+ * player.js — runs a routine: one step at a time, with the demo playing beside
+ * the timer so you can check your form mid-set.
+ */
+(function (global) {
+  'use strict';
+
+  var el = UI.el;
+  var session = null;
+
+  /* Flatten a routine into the sequence actually performed:
+   * work, rest, work, rest… with the trailing rest dropped. */
+  function buildSteps(routine) {
+    var steps = [];
+    routine.items.forEach(function (it, itemIndex) {
+      var ex = Store.getExercise(it.exerciseId);
+      if (!ex) return;
+      for (var s = 1; s <= it.sets; s++) {
+        steps.push({
+          type: 'work',
+          exercise: ex,
+          item: it,
+          set: s,
+          sets: it.sets,
+          seconds: it.mode === 'time' ? it.seconds : null,
+          label: it.mode === 'time' ? it.seconds + ' seconds' : it.reps + ' reps',
+          itemIndex: itemIndex
+        });
+        if (it.rest > 0) {
+          steps.push({ type: 'rest', seconds: it.rest, exercise: ex, item: it, set: s, sets: it.sets });
+        }
+      }
+    });
+    while (steps.length && steps[steps.length - 1].type === 'rest') steps.pop();
+    return steps;
+  }
+
+  function start(routine) {
+    var steps = buildSteps(routine);
+    if (!steps.length) { UI.toast('This routine has no exercises yet'); return; }
+
+    session = {
+      routine: routine,
+      steps: steps,
+      index: 0,
+      startedAt: Date.now(),
+      remaining: 0,
+      running: true,
+      tick: null,
+      completedWork: 0,
+      totalWork: steps.filter(function (s) { return s.type === 'work'; }).length
+    };
+
+    var overlay = el('div.player-overlay');
+    document.body.appendChild(overlay);
+    document.body.classList.add('no-scroll');
+    session.overlay = overlay;
+
+    paint();
+    session.tick = setInterval(onTick, 250);
+    document.addEventListener('keydown', onKey);
+  }
+
+  function onKey(e) {
+    if (!session) return;
+    if (e.key === 'Escape') quit();
+    else if (e.key === ' ') { e.preventDefault(); togglePause(); }
+    else if (e.key === 'ArrowRight') next();
+    else if (e.key === 'ArrowLeft') prev();
+  }
+
+  function currentStep() { return session.steps[session.index]; }
+
+  function onTick() {
+    if (!session || !session.running) return;
+    var step = currentStep();
+    if (!step || !step.seconds) return;
+    session.remaining -= 0.25;
+    if (session.remaining <= 0) {
+      beep(step.type === 'rest' ? 660 : 440);
+      next();
+      return;
+    }
+    var t = session.overlay.querySelector('.timer-value');
+    if (t) t.textContent = UI.clock(session.remaining);
+    var ring = session.overlay.querySelector('.ring-progress');
+    if (ring) {
+      var frac = 1 - session.remaining / step.seconds;
+      ring.style.strokeDashoffset = String(Math.max(0, 314 * (1 - frac)));
+    }
+    // Count down the last three seconds out loud-ish.
+    if (Math.abs(session.remaining - Math.round(session.remaining)) < 0.13 &&
+        session.remaining <= 3.1 && session.remaining > 0.4) {
+      beep(880, 0.06, 0.05);
+    }
+  }
+
+  function next() {
+    if (!session) return;
+    if (currentStep() && currentStep().type === 'work') session.completedWork++;
+    if (session.index >= session.steps.length - 1) { finish(); return; }
+    session.index++;
+    paint();
+  }
+
+  function prev() {
+    if (!session || session.index === 0) return;
+    session.index--;
+    if (currentStep().type === 'work' && session.completedWork > 0) session.completedWork--;
+    paint();
+  }
+
+  function togglePause() {
+    if (!session) return;
+    session.running = !session.running;
+    var btn = session.overlay.querySelector('.pause-btn');
+    if (btn) btn.textContent = session.running ? 'Pause' : 'Resume';
+    var media = session.overlay.querySelector('.media');
+    if (media && media._player) media._player.paused = !session.running;
+  }
+
+  function paint() {
+    var overlay = session.overlay;
+    Media.stop(overlay);
+    UI.clear(overlay);
+
+    var step = currentStep();
+    session.remaining = step.seconds || 0;
+
+    var upcoming = session.steps.slice(session.index + 1)
+      .filter(function (s) { return s.type === 'work'; })[0];
+    // "Next: <same exercise>" is noise — only call it out when the exercise
+    // actually changes.
+    var nextIsNewExercise = upcoming && upcoming.exercise.id !== step.exercise.id;
+
+    var progress = session.completedWork / session.totalWork;
+
+    var head = el('header.player-head', [
+      el('div', [
+        el('p.player-routine', { text: session.routine.name }),
+        el('p.player-progress-text', {
+          text: Math.min(session.completedWork + 1, session.totalWork) + ' of ' + session.totalWork + ' sets overall'
+        })
+      ]),
+      el('button.icon-btn', { type: 'button', 'aria-label': 'Close workout', onclick: quit }, UI.icon('close'))
+    ]);
+
+    var bar = el('div.player-bar', [el('div.player-bar-fill')]);
+    bar.firstChild.style.width = (progress * 100).toFixed(1) + '%';
+
+    var stage;
+    if (step.type === 'rest') {
+      stage = el('div.player-stage.rest-stage', [
+        el('p.rest-label', { text: 'Rest' }),
+        timerRing(step.seconds),
+        upcoming
+          ? el('p.next-up', { text: 'Next: ' + upcoming.exercise.name + ' · ' + upcoming.label })
+          : el('p.next-up', { text: 'Last one done — nearly there.' })
+      ]);
+    } else {
+      var media = Media.render(step.exercise, { large: true, autoplay: true });
+      stage = el('div.player-stage', [
+        el('div.player-media', [media]),
+        el('div.player-info', [
+          el('h2', { text: step.exercise.name }),
+          el('p.player-target', { text: step.label }),
+          el('p.player-set', { text: 'Set ' + step.set + ' of ' + step.sets }),
+          step.seconds ? timerRing(step.seconds) : el('button.btn.btn-primary.btn-lg', {
+            type: 'button', text: 'Done — next', onclick: next
+          }),
+          step.exercise.notes ? el('p.player-notes', { text: step.exercise.notes }) : null,
+          (!step.exercise.media || step.exercise.media.type === 'animation')
+            ? el('p.demo-cue', { text: Anim.get(Media.presetFor(step.exercise)).cue })
+            : null,
+          nextIsNewExercise
+            ? el('p.next-up', { text: 'Next: ' + upcoming.exercise.name })
+            : (upcoming ? el('p.next-up', { text: 'Then set ' + (step.set + 1) + ' of ' + step.sets }) : null)
+        ])
+      ]);
+    }
+
+    var controls = el('div.player-controls', [
+      el('button.btn.btn-ghost', { type: 'button', text: 'Back', disabled: session.index === 0, onclick: prev }),
+      el('button.btn.btn-ghost.pause-btn', { type: 'button', text: session.running ? 'Pause' : 'Resume', onclick: togglePause }),
+      el('button.btn.btn-primary', { type: 'button', text: step.type === 'rest' ? 'Skip rest' : 'Next', onclick: next })
+    ]);
+
+    overlay.appendChild(el('div.player-inner', [head, bar, stage, controls,
+      el('p.player-hint', { text: 'Space pauses · arrow keys move · Esc ends the workout' })]));
+  }
+
+  function timerRing(seconds) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 120 120');
+    svg.setAttribute('class', 'ring');
+    function circle(cls) {
+      var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', '60'); c.setAttribute('cy', '60'); c.setAttribute('r', '50');
+      c.setAttribute('class', cls);
+      return c;
+    }
+    var track = circle('ring-track');
+    var prog = circle('ring-progress');
+    prog.setAttribute('stroke-dasharray', '314');
+    prog.setAttribute('stroke-dashoffset', '314');
+    svg.appendChild(track);
+    svg.appendChild(prog);
+    return el('div.timer', [svg, el('span.timer-value', { text: UI.clock(seconds) })]);
+  }
+
+  function finish() {
+    if (!session) return;
+    var elapsed = Math.round((Date.now() - session.startedAt) / 1000);
+    Store.logSession({
+      routineId: session.routine.id,
+      routineName: session.routine.name,
+      seconds: elapsed,
+      completed: session.completedWork,
+      total: session.totalWork
+    });
+    var routineName = session.routine.name;
+    teardown();
+    App.refresh();
+    var footer = el('div.row-end', [
+      el('button.btn.btn-primary', { type: 'button', text: 'Done', onclick: function () { doneModal.close(); } })
+    ]);
+    var doneModal = UI.modal('Workout complete', el('div.done', [
+      el('p.done-big', { text: 'Nice work.' }),
+      el('p', { text: routineName + ' · ' + UI.fmtDuration(elapsed) }),
+      el('p.sub', { text: 'Logged to your history.' })
+    ]), footer);
+    beep(880, 0.25, 0.12);
+  }
+
+  function quit() {
+    if (!session) return;
+    var done = session.completedWork;
+    var elapsed = Math.round((Date.now() - session.startedAt) / 1000);
+    var name = session.routine.name;
+    var id = session.routine.id;
+    var total = session.totalWork;
+    teardown();
+    if (done > 0) {
+      Store.logSession({ routineId: id, routineName: name, seconds: elapsed, completed: done, total: total });
+      App.refresh();
+      UI.toast('Workout saved — ' + done + ' of ' + total + ' sets');
+    }
+  }
+
+  function teardown() {
+    if (!session) return;
+    clearInterval(session.tick);
+    document.removeEventListener('keydown', onKey);
+    Media.stop(session.overlay);
+    session.overlay.remove();
+    document.body.classList.remove('no-scroll');
+    session = null;
+  }
+
+  /* A short tone for the end of a timed set. Uses WebAudio so there is no
+   * audio file to ship; silently does nothing if the browser blocks it. */
+  var audioCtx = null;
+  function beep(freq, duration, volume) {
+    try {
+      if (!audioCtx) audioCtx = new (global.AudioContext || global.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq || 660;
+      gain.gain.value = volume === undefined ? 0.1 : volume;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      var now = audioCtx.currentTime;
+      var dur = duration || 0.15;
+      gain.gain.setValueAtTime(gain.gain.value, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      osc.start(now);
+      osc.stop(now + dur);
+    } catch (e) { /* audio is a nicety, never a blocker */ }
+  }
+
+  global.Player = { start: start, buildSteps: buildSteps };
+})(window);
+
+
+/* ===== assets/js/app.js ===== */
+/* app.js — shell, routing, home dashboard, history and settings. */
+(function (global) {
+  'use strict';
+
+  var el = UI.el;
+  var root, current = 'home';
+
+  var VIEWS = [
+    { key: 'home', label: 'Home', icon: 'home' },
+    { key: 'routines', label: 'Routines', icon: 'list' },
+    { key: 'exercises', label: 'Exercises', icon: 'dumbbell' },
+    { key: 'history', label: 'History', icon: 'chart' }
+  ];
+
+  function go(view) {
+    current = view;
+    if (global.location.hash !== '#' + view) global.location.hash = view;
+    paintNav();
+    render();
+  }
+
+  function paintNav() {
+    var nav = document.getElementById('nav');
+    UI.clear(nav);
+    VIEWS.forEach(function (v) {
+      nav.appendChild(el('button.nav-btn' + (current === v.key ? '.nav-on' : ''), {
+        type: 'button', onclick: function () { go(v.key); }
+      }, [UI.icon(v.icon), el('span', { text: v.label })]));
+    });
+  }
+
+  function render() {
+    Media.stop(root);
+    if (current === 'exercises') Exercises.render(root);
+    else if (current === 'routines') Routines.render(root);
+    else if (current === 'history') history(root);
+    else home(root);
+    root.scrollTop = 0;
+  }
+
+  function refresh() { render(); }
+
+  /* ------------------------------------------------------------------ home */
+
+  function home(node) {
+    UI.clear(node);
+
+    var hist = Store.history();
+    var routines = Store.routines();
+    var thisWeek = hist.filter(function (h) { return Date.now() - h.finishedAt < 7 * 864e5; });
+    var weekSeconds = thisWeek.reduce(function (a, h) { return a + h.seconds; }, 0);
+
+    node.appendChild(el('div.hero', [
+      el('div.hero-text', [
+        el('p.eyebrow', { text: 'FitForge' }),
+        el('h1', { text: greeting() }),
+        el('p.sub', { text: 'Build a routine, then follow it rep by rep — with a demonstration for every exercise.' }),
+        el('div.hero-actions', [
+          routines.length
+            ? el('button.btn.btn-primary.btn-lg', {
+                type: 'button', onclick: function () { Player.start(routines[0]); }
+              }, [UI.icon('play'), 'Start ' + routines[0].name])
+            : el('button.btn.btn-primary.btn-lg', { type: 'button', text: 'Build your first routine', onclick: function () { Routines.edit(null); } }),
+          el('button.btn.btn-ghost.btn-lg', { type: 'button', text: 'New exercise', onclick: function () { Exercises.edit(null); } })
+        ])
+      ]),
+      heroAnimation()
+    ]));
+
+    node.appendChild(el('div.stats', [
+      stat(String(Store.exercises().length), 'exercises'),
+      stat(String(routines.length), 'routines'),
+      stat(String(thisWeek.length), 'workouts this week'),
+      stat(UI.fmtDuration(weekSeconds), 'trained this week')
+    ]));
+
+    node.appendChild(el('h2.section-title', { text: 'Your routines' }));
+    var list = el('div.routine-list');
+    if (!routines.length) {
+      list.appendChild(UI.empty('No routines yet', 'Group your exercises into a routine you can follow start to finish.',
+        el('button.btn.btn-primary', { type: 'button', text: 'New routine', onclick: function () { Routines.edit(null); } })));
+    } else {
+      routines.slice(0, 3).forEach(function (r) {
+        list.appendChild(el('article.routine-card', [
+          el('div.routine-main', [
+            el('h3', { text: r.name }),
+            el('p.routine-meta', {
+              text: r.items.length + ' exercises · about ' + UI.fmtDuration(Store.estimateSeconds(r))
+            })
+          ]),
+          el('div.routine-actions', [
+            el('button.btn.btn-primary', {
+              type: 'button', disabled: !r.items.length, onclick: function () { Player.start(r); }
+            }, [UI.icon('play'), 'Start'])
+          ])
+        ]));
+      });
+      if (routines.length > 3) {
+        list.appendChild(el('button.btn.btn-ghost', { type: 'button', text: 'See all routines', onclick: function () { go('routines'); } }));
+      }
+    }
+    node.appendChild(list);
+
+    if (hist.length) {
+      node.appendChild(el('h2.section-title', { text: 'Recent' }));
+      var recent = el('div.history-list');
+      hist.slice(0, 3).forEach(function (h) { recent.appendChild(historyRow(h)); });
+      node.appendChild(recent);
+    }
+  }
+
+  function greeting() {
+    var h = new Date().getHours();
+    if (h < 12) return 'Good morning — ready to train?';
+    if (h < 18) return 'Good afternoon — ready to train?';
+    return 'Good evening — ready to train?';
+  }
+
+  function stat(value, label) {
+    return el('div.stat', [el('strong', { text: value }), el('span', { text: label })]);
+  }
+
+  /* The hero shows off the generated-animation feature, cycling through the
+   * motions the app knows how to draw. */
+  function heroAnimation() {
+    var canvas = el('canvas.anim-canvas');
+    var caption = el('p.hero-caption');
+    var wrap = el('div.hero-anim', [canvas, caption]);
+    var keys = Anim.list().filter(function (m) { return m.key !== 'generic'; });
+    var i = Math.floor(Math.random() * keys.length);
+
+    requestAnimationFrame(function () {
+      var player = new Anim.Player(canvas, { motion: keys[i].key, tempo: 2.2 });
+      wrap._player = player;
+      caption.textContent = keys[i].label;
+      player.start();
+      var timer = setInterval(function () {
+        if (!document.body.contains(canvas)) { clearInterval(timer); player.stop(); return; }
+        i = (i + 1) % keys.length;
+        player.setMotion(keys[i].key);
+        caption.textContent = keys[i].label;
+      }, 6000);
+    });
+    return wrap;
+  }
+
+  /* --------------------------------------------------------------- history */
+
+  function history(node) {
+    UI.clear(node);
+    var hist = Store.history();
+
+    node.appendChild(el('div.page-head', [
+      el('div', [
+        el('h1', { text: 'History' }),
+        el('p.sub', { text: 'Every workout you have finished or partly finished.' })
+      ]),
+      hist.length ? el('button.btn.btn-ghost', {
+        type: 'button', text: 'Clear history',
+        onclick: function () {
+          UI.confirmDialog('Delete your whole workout history?', function () {
+            Store.clearHistory(); refresh(); UI.toast('History cleared');
+          });
+        }
+      }) : null
+    ]));
+
+    if (!hist.length) {
+      node.appendChild(UI.empty('No workouts logged yet', 'Finish a routine and it will show up here.'));
+    } else {
+      var total = hist.reduce(function (a, h) { return a + h.seconds; }, 0);
+      node.appendChild(el('div.stats', [
+        stat(String(hist.length), 'workouts'),
+        stat(UI.fmtDuration(total), 'total time'),
+        stat(UI.fmtDuration(total / hist.length), 'average')
+      ]));
+      var list = el('div.history-list');
+      hist.forEach(function (h) { list.appendChild(historyRow(h)); });
+      node.appendChild(list);
+    }
+
+    node.appendChild(el('h2.section-title', { text: 'Your data' }));
+    node.appendChild(el('div.settings', [
+      el('p.panel-note', { text: 'Everything is stored in this browser only. Export a copy to move it to another device or keep a backup.' }),
+      el('div.row', [
+        el('button.btn.btn-ghost', { type: 'button', text: 'Export JSON', onclick: exportData }),
+        el('label.btn.btn-ghost', [
+          'Import JSON',
+          el('input', {
+            type: 'file', accept: 'application/json,.json', hidden: 'hidden', onchange: importData
+          })
+        ]),
+        el('button.btn.btn-danger', {
+          type: 'button', text: 'Reset everything',
+          onclick: function () {
+            UI.confirmDialog('This deletes all your exercises, routines and history, and restores the starter set.', function () {
+              Store.resetAll(); refresh(); UI.toast('Reset to the starter library');
+            });
+          }
+        })
+      ])
+    ]));
+  }
+
+  function historyRow(h) {
+    return el('div.history-row', [
+      el('div', [
+        el('strong', { text: h.routineName }),
+        el('span.sub', { text: UI.fmtDate(h.finishedAt) })
+      ]),
+      el('div.history-right', [
+        el('span.pill', { text: UI.fmtDuration(h.seconds) }),
+        el('span.sub', { text: h.completed + '/' + h.total + ' sets' })
+      ])
+    ]);
+  }
+
+  function exportData() {
+    var blob = new Blob([Store.exportJSON()], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = el('a', { href: url, download: 'fitforge-backup-' + new Date().toISOString().slice(0, 10) + '.json' });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    UI.toast('Backup downloaded');
+  }
+
+  function importData(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        Store.importJSON(reader.result);
+        refresh();
+        UI.toast('Data imported');
+      } catch (err) {
+        UI.toast(err.message || 'That file could not be imported');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  /* ------------------------------------------------------------------ boot */
+
+  function init() {
+    root = document.getElementById('view');
+    Store.load();
+
+    var hash = (global.location.hash || '').replace('#', '');
+    if (VIEWS.some(function (v) { return v.key === hash; })) current = hash;
+
+    global.addEventListener('hashchange', function () {
+      var h = (global.location.hash || '').replace('#', '') || 'home';
+      if (h !== current && VIEWS.some(function (v) { return v.key === h; })) {
+        current = h;
+        paintNav();
+        render();
+      }
+    });
+
+    // Canvas sizing depends on layout, so redraw on resize.
+    var resizeTimer;
+    global.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(render, 200);
+    });
+
+    // Keep the exercise datalist in sync for the category input.
+    Store.subscribe(paintCategoryList);
+    paintCategoryList();
+
+    paintNav();
+    render();
+  }
+
+  function paintCategoryList() {
+    var dl = document.getElementById('category-list');
+    if (!dl) return;
+    UI.clear(dl);
+    var seen = {};
+    ['Strength', 'Cardio', 'Core', 'Mobility'].concat(
+      Store.exercises().map(function (e) { return e.category; })
+    ).forEach(function (c) {
+      if (!c || seen[c]) return;
+      seen[c] = true;
+      dl.appendChild(el('option', { value: c }));
+    });
+  }
+
+  global.App = { init: init, go: go, refresh: refresh };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})(window);
+
+</script>
