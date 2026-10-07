@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>DC Labor &amp; Throughput Capacity</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2430;--mut:#667085;--g:#2e9e5b;--a:#e0a100;--r:#d64545;--b:#2f6fdb;--line:#e4e7ec}
+*{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;gap:16px;align-items:center;padding:14px 24px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:18px;margin:0;flex:1}select{padding:6px;border:1px solid var(--line);border-radius:6px}
+main{padding:20px 24px;display:grid;gap:16px;max-width:1300px;margin:auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.tile,.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.tile{border-left:5px solid var(--line)}.tile.green{border-left-color:var(--g)}.tile.amber{border-left-color:var(--a)}.tile.red{border-left-color:var(--r)}
+.tile .l{color:var(--mut);font-size:12px}.tile .v{font-size:22px;font-weight:600}.tile .d{color:var(--mut);font-size:11px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.row{grid-template-columns:1fr}}
+h2{font-size:14px;margin:0 0 8px}table{border-collapse:collapse;width:100%}th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}th{color:var(--mut);font-weight:500;font-size:12px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.dot.green{background:var(--g)}.dot.amber{background:var(--a)}.dot.red{background:var(--r)}
+svg text{font-size:10px;fill:var(--mut)}.leg{font-size:12px;color:var(--mut)}.leg i{display:inline-block;width:10px;height:3px;margin:0 4px 2px 10px}
+</style></head><body>
+<header><h1>DC Labor &amp; Throughput Capacity Monitor</h1>
+<label>Process <select id="proc"><option value="">All</option></select></label>
+<label>Window <select id="days"><option>7</option><option selected>14</option><option>28</option><option>56</option></select> days</label></header>
+<main>
+<div class="tiles" id="tiles"></div>
+<div class="row"><div class="card"><h2>Daily units per paid labor hour (UPLH)</h2><div id="c1"></div></div>
+<div class="card"><h2>Daily capacity utilization &amp; labor coverage</h2><div id="c2"></div></div></div>
+<div class="row"><div class="card"><h2>Avg hourly profile: demand vs throughput vs design capacity (units)</h2><div id="c3"></div></div>
+<div class="card"><h2>Alerts (amber / red)</h2><div id="alerts"></div></div></div>
+<div class="card"><h2>KPIs by process</h2><div id="tbl"></div></div>
+</main>
+<script>
+const KPI={uplh:["UPLH","Units per paid labor hour",v=>v.toFixed(1)],
+performance_to_standard:["Performance to std","Earned hrs / productive hrs",pct],
+labor_utilization:["Labor utilization","Productive / paid hrs",pct],
+capacity_utilization:["Capacity utilization","Output / design capacity",pct],
+labor_coverage:["Labor coverage","Heads present / required",pct],
+absenteeism:["Absenteeism","Scheduled heads absent",pct],
+overtime_pct:["Overtime %","OT hrs / paid hrs",pct],
+backlog_hours:["Backlog (hrs)","Carry-over / hourly throughput",v=>v.toFixed(1)],
+forecast_mape:["Forecast MAPE","Hourly volume forecast error",pct],
+peak_to_avg:["Peak-to-avg","Peak hour / avg hour",v=>v.toFixed(2)]};
+function pct(v){return (v*100).toFixed(1)+"%"}
+const $=id=>document.getElementById(id);
+function line(el,xs,series,fmt){ // series: [{name,color,vals}]
+ const W=560,H=200,m={l:40,r:10,t:10,b:22},all=series.flatMap(s=>s.vals);
+ let lo=Math.min(...all),hi=Math.max(...all);const pad=(hi-lo)*.1||1;lo-=pad;hi+=pad;
+ const x=i=>m.l+i*(W-m.l-m.r)/Math.max(1,xs.length-1),y=v=>m.t+(hi-v)*(H-m.t-m.b)/(hi-lo);
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+ for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e4e7ec"/><text x="${m.l-4}" y="${y(v)+3}" text-anchor="end">${fmt(v)}</text>`}
+ xs.forEach((d,i)=>{if(i%Math.ceil(xs.length/7)==0)s+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${d.slice(5)}</text>`});
+ series.forEach(se=>{s+=`<polyline fill="none" stroke="${se.color}" stroke-width="2" points="${se.vals.map((v,i)=>x(i)+","+y(v)).join(" ")}"/>`});
+ el.innerHTML=s+"</svg>"+'<div class="leg">'+series.map(se=>`<i style="background:${se.color}"></i>${se.name}`).join("")+"</div>"}
+function bars(el,h){
+ const W=560,H=220,m={l:48,r:10,t:10,b:22},hi=Math.max(...h.flatMap(d=>[d.capacity,d.demand,d.units]))*1.05,bw=(W-m.l-m.r)/h.length;
+ const y=v=>m.t+(hi-v)*(H-m.t-m.b)/hi;let s=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+ for(let i=0;i<=4;i++){const v=hi*i/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e4e7ec"/><text x="${m.l-4}" y="${y(v)+3}" text-anchor="end">${Math.round(v)}</text>`}
+ h.forEach((d,i)=>{const x=m.l+i*bw;s+=`<rect x="${x+2}" y="${y(d.units)}" width="${bw-4}" height="${y(0)-y(d.units)}" fill="#2f6fdb" opacity=".8"/><text x="${x+bw/2}" y="${H-6}" text-anchor="middle">${d.hour}</text>`});
+ const pl=(k,c,dash)=>`<polyline fill="none" stroke="${c}" stroke-width="2" ${dash?'stroke-dasharray="4 3"':''} points="${h.map((d,i)=>(m.l+i*bw+bw/2)+","+y(d[k])).join(" ")}"/>`;
+ el.innerHTML=s+pl("capacity","#d64545")+pl("demand","#e0a100",1)+'</svg><div class="leg"><i style="background:#2f6fdb"></i>Throughput<i style="background:#d64545"></i>Design capacity<i style="background:#e0a100"></i>Demand</div>'}
+async function load(){
+ const p=$("proc").value,d=await (await fetch(`/api/data?days=${$("days").value}&process=${p}`)).json();
+ if(!$("proc").dataset.f){Object.keys(d.by_process).forEach(n=>$("proc").add(new Option(n,n)));$("proc").dataset.f=1}
+ const src=p?d.by_process[p]:d.overall;
+ $("tiles").innerHTML=Object.entries(KPI).map(([k,[l,desc,f]])=>`<div class="tile ${src.status[k]||""}" title="${desc}"><div class="l">${l}</div><div class="v">${f(src[k])}</div><div class="d">${desc}</div></div>`).join("");
+ const xs=d.trend.map(t=>t.date);
+ line($("c1"),xs,[{name:"UPLH",color:"#2f6fdb",vals:d.trend.map(t=>t.uplh)}],v=>v.toFixed(0));
+ line($("c2"),xs,[{name:"Capacity utilization",color:"#2f6fdb",vals:d.trend.map(t=>t.capacity_utilization)},{name:"Labor coverage",color:"#2e9e5b",vals:d.trend.map(t=>t.labor_coverage)}],v=>(v*100).toFixed(0)+"%");
+ bars($("c3"),d.hourly);
+ $("alerts").innerHTML=d.alerts.length?`<table>${d.alerts.filter(a=>!p||a.process==p).map(a=>`<tr><td><span class="dot ${a.severity}"></span>${a.process}</td><td>${KPI[a.kpi][0]}</td><td>${KPI[a.kpi][2](a.value)}</td></tr>`).join("")}</table>`:"No alerts";
+ const ks=Object.keys(KPI);
+ $("tbl").innerHTML=`<table><tr><th>Process</th>${ks.map(k=>`<th>${KPI[k][0]}</th>`).join("")}</tr>${Object.entries(d.by_process).map(([n,r])=>`<tr><td>${n}</td>${ks.map(k=>`<td><span class="dot ${r.status[k]||""}"></span>${KPI[k][2](r[k])}</td>`).join("")}</tr>`).join("")}</table>`}
+$("proc").onchange=$("days").onchange=load;load();
+</script></body></html>
