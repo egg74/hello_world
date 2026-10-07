@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Warehouse report - outbound capacity</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--navy:#0a2a5e;--ink:#1a1a1a;--mut:#8a8f98;--line:#d9dde3;--bg:#f0f0f0}
+*{box-sizing:border-box}body{margin:0;font:12px "Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.top{background:#fff;display:flex;align-items:flex-end;height:60px;padding-left:16px;gap:6px;border-bottom:1px solid var(--line)}
+.logo{font:italic 800 17px Arial;letter-spacing:1.5px;color:var(--navy);align-self:center;margin-right:50px;white-space:nowrap}
+.tab{padding:0 26px;height:60px;display:flex;align-items:center;color:#a5a9b0;font-weight:600;white-space:nowrap}
+.tab.on{background:#fff;color:var(--navy);border-bottom:5px solid var(--navy)}
+.filters{display:flex;gap:12px;align-items:flex-start;padding:12px 24px;flex-wrap:wrap}
+.f{display:flex;flex-direction:column;gap:3px;min-width:110px}.f label{color:#a0a4ab;font-weight:600;max-width:140px}
+.f select,.f input[type=text]{height:22px;border:1px solid #fff;background:#fff;padding:0 4px;font-size:11px;width:110px}
+.f input[type=text]{width:62px}.f input[type=range]{width:110px;height:12px;margin:6px 0 0;accent-color:#7a8088}
+.right{display:flex;gap:12px;align-items:flex-start;margin-left:auto}.seg{display:flex;flex-direction:column;gap:3px}.seg b{font-size:13px}.seg div{display:flex}
+.btn{border:0;background:#fff;color:var(--ink);font:600 10px "Segoe UI",Arial;padding:7px 10px;cursor:pointer}
+.btn.on{background:var(--navy);color:#fff}.clear{white-space:nowrap;background:var(--navy);color:#fff;font-size:13px;padding:0 26px;height:52px;border:0;font-weight:600;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 380px;gap:8px;padding:0 8px 8px}@media(max-width:1100px){.grid{grid-template-columns:1fr}}
+.panel{background:#fff;padding:12px 10px}
+.ctitle{display:flex;justify-content:space-between;align-items:flex-start}.ctitle h2{margin:0 0 2px 6px;font-size:16px}
+.ctitle small{display:block;margin-left:6px;color:#666;font-weight:600;font-size:10px;margin-bottom:6px}
+.legend{display:flex;flex-wrap:wrap;gap:2px 10px;margin:4px 6px;font-size:9px;color:#555}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px}.legend u{display:inline-block;width:16px;margin-right:3px;border-top:2px solid;vertical-align:middle}
+#chart{position:relative}svg text{font:10px "Segoe UI",Arial;fill:#666}
+#tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px #0003;padding:6px 8px;font-size:10px;display:none;z-index:5;white-space:nowrap}
+#tip div{display:flex;justify-content:space-between;gap:14px}#tip i{display:inline-block;width:8px;height:8px;margin-right:4px}
+.tw{max-height:300px;overflow:auto;margin-top:8px}table{border-collapse:collapse;width:100%}
+th{position:sticky;top:0;background:#fff;color:var(--navy);font-weight:700;padding:4px 6px;text-align:center;border-bottom:1px solid var(--navy);font-size:11px}
+td{padding:5px 6px;text-align:center;border-bottom:1px solid #e3e6ea;font-size:11px}tr:hover td{background:#f4f7fb}
+.side{display:grid;grid-template-columns:1fr 1fr 1fr;align-content:space-between;padding:16px 12px}
+.side .h{font-size:15px;text-align:center;padding-bottom:26px}.side .lab{font-size:15px;line-height:1.2;align-self:center;padding:22px 0}
+.side .v{font-size:15px;font-weight:700;text-align:center;align-self:center}.span{grid-column:2/4;text-align:center;font-size:17px;font-weight:700;align-self:center}
+.dem{grid-column:2/4;text-align:center}.dem span{display:block;font-size:11px;color:#555}.dem b{font-size:17px}
+.note{padding:6px 14px 14px;color:#777;font-size:10px}
+</style></head><body>
+<div class="top"><div class="logo">AMER SPORTS</div><div class="tab on">Warehouse report</div></div>
+<div class="filters">
+ <div class="f"><label>Warehouse</label><select id="wh"></select></div>
+ <div class="f"><label>Week</label><select id="wk"></select></div>
+ <div class="f"><label>Delivery Block % release</label><input type="text" id="t0"><input type="range" id="s0" min="0" max="100"></div>
+ <div class="f"><label>Credit Block % release</label><input type="text" id="t1"><input type="range" id="s1" min="0" max="100"></div>
+ <div class="f"><label>Customer Reservation % call off</label><input type="text" id="t2"><input type="range" id="s2" min="0" max="100"></div>
+ <div class="f"><label>Country Reservation % call off</label><input type="text" id="t3"><input type="range" id="s3" min="0" max="100"></div>
+ <div class="right"><div class="seg"><b>Show chart ...</b><div><button class="btn on" id="cum1">with cumulative blocks</button><button class="btn" id="cum0">without cumulative blocks</button></div></div>
+ <button class="clear" id="clear">Clear all filter</button></div>
+</div>
+<div class="grid">
+ <div>
+  <div class="panel">
+   <div class="ctitle"><div><h2 id="ct">Warehouse outbound capacity - With cumulative blocks Units</h2><small>Outbound logistics</small></div>
+    <div><button class="btn on" id="mU" style="padding:8px 26px;font-size:11px">Units</button><button class="btn" id="mA" style="padding:8px 26px;font-size:11px;border:1px solid var(--line)">ASP</button></div></div>
+   <div class="legend" id="legend"></div><div id="chart"><div id="tip"></div></div>
+  </div>
+  <div class="panel" style="margin-top:8px"><div class="tw"><table id="tbl"></table></div></div>
+ </div>
+ <div class="panel side" id="side"></div>
+</div>
+<div class="note">Demo with synthetic data (not real Amer Sports figures). Block/reservation logic, capacities and unit costs are assumptions - see the ASSUMPTIONS object in this file.</div>
+<script>
+// ---------- ASSUMPTIONS (replace with real data / rates) ----------
+const ASSUMPTIONS={weeks:13,unitCostStd:1.0,overflowPremium:0.6,flexPremium:0.3,
+ warehouses:{5030:1,5040:.7,5050:1.3,5060:.5},defaults:[10,0,0,0]};
+const SER=[ // key,label,colour
+ ["sto","STO","#bfe0f3"],["free","Total Free Orders","#7fc8ea"],["delivery","Delivery","#1397d3"],["promo","Promo","#0b3a55"],
+ ["po","Purchase Order","#3b4ba8"],["prop","Order Proposal","#6f86a8"],["dblkR","Delivery Block (released)","#12b32d"],
+ ["cblkR","Credit Block (released)","#3dd68c"],["custCO","Customer Reservation (called off)","#9ee0bd"],["ctryCO","Country Reservation (called off)","#cdeedd"],
+ ["remCust","Remaining Customer Reservation","#fde3d1"],["remCtry","Remaining Country Reservation","#f9a67a"],
+ ["cblk","Credit Blocked","#f97f3d"],["dblk","Delivery Blocked","#c04f15"]];
+const LINES=[["std","Standard capacity","#f08a9a",""],["flex","Flex capacity","#1a1aff","2 3"],["demand","Demand","#17505f",""]];
+// ---------- synthetic data ----------
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function isoWeek(d){d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-n);
+ return[d.getUTCFullYear(),Math.ceil(((d-new Date(Date.UTC(d.getUTCFullYear(),0,1)))/864e5+1)/7)]}
+const cache={};
+function raw(wh){ // per-week base figures for a warehouse
+ if(cache[wh])return cache[wh];const sc=ASSUMPTIONS.warehouses[wh],r=rng(+wh),u=(a,b)=>a+(b-a)*r(),N=ASSUMPTIONS.weeks,out=[],now=new Date();
+ for(let i=0;i<N;i++){
+  const d=new Date(now);d.setDate(d.getDate()+7*i);const [yr,wk]=isoWeek(d),h=i/(N-1),b=260000*sc,nz=()=>u(.85,1.15),late=i>=N-2?(i===N-1?.55:.7):1;
+  out.push({week:wk,year:yr,
+   sto:b*.10*(1-.5*h)*nz(),free:b*.5*Math.pow(1-h,1.4)*nz(),delivery:b*.35*Math.pow(1-h,2.2)*nz(),promo:b*.03*nz(),
+   po:b*(.05+.10*h)*nz(),prop:b*(.04+.14*h)*nz()*late,
+   nDblk:b*.03*(.6+h)*nz(),nCblk:b*.045*(.6+h)*nz(),nCust:b*.035*(.6+h)*nz(),nCtry:b*.03*(.6+h)*nz(),
+   std:b*.88*late*(i%5===4?.97:1)*u(.97,1.03),flexF:i===N-1?.4:u(.97,1.1),asp:u(118,142)});
+ }
+ out.forEach(w=>w.flex=w.std*w.flexF);
+ return cache[wh]=out}
+// ---------- model ----------
+const st={wh:"5030",wk:"All",p:[...ASSUMPTIONS.defaults],cum:true,mode:"U"};
+function model(){
+ const R=raw(st.wh),[pd,pc,pu,py]=st.p.map(x=>x/100);let cd=0,cc=0,cu=0,cy=0;
+ const all=R.map(w=>{
+  cd+=w.nDblk;cc+=w.nCblk;cu+=w.nCust;cy+=w.nCtry;
+  const bd=st.cum?cd:w.nDblk,bc=st.cum?cc:w.nCblk,bu=st.cum?cu:w.nCust,by=st.cum?cy:w.nCtry;
+  const o={week:w.week,year:w.year,asp:w.asp,sto:w.sto,free:w.free,delivery:w.delivery,promo:w.promo,po:w.po,prop:w.prop,
+   dblkR:bd*pd,dblk:bd*(1-pd),cblkR:bc*pc,cblk:bc*(1-pc),custCO:bu*pu,remCust:bu*(1-pu),ctryCO:by*py,remCtry:by*(1-py)};
+  o.demand=o.sto+o.free+o.delivery+o.promo+o.po+o.prop;
+  o.needed=o.demand+o.dblkR+o.cblkR+o.custCO+o.ctryCO;
+  o.std=w.std;o.flex=w.flex;
+  const cost=cap=>{const done=Math.min(o.needed,cap),over=o.needed-done;return done*ASSUMPTIONS.unitCostStd+over*(ASSUMPTIONS.unitCostStd+ASSUMPTIONS.overflowPremium)};
+  o.costStd=cost(o.std);o.costFlex=cost(o.flex)+Math.max(0,Math.min(o.needed,o.flex)-o.std)*ASSUMPTIONS.flexPremium;
+  o.utilStd=o.needed/o.std;o.utilFlex=o.needed/o.flex;return o});
+ return st.wk==="All"?all:all.filter(w=>String(w.week)===st.wk)}
+// ---------- rendering ----------
+const $=id=>document.getElementById(id),f0=v=>Math.round(v).toLocaleString("en-US"),K=v=>f0(v/1000)+"K",pc=v=>Math.round(v*100)+"%";
+function drawChart(W){
+ const asp=st.mode==="A",X=800,H=360,mg={l:46,r:8,t:8,b:36},n=W.length,slot=(X-mg.l-mg.r)/n,bw=Math.min(slot*.78,70);
+ const sc=w=>asp?w.asp:1,tot=w=>SER.reduce((a,s)=>a+(w[s[0]]||0),0)*sc(w);
+  const lineV=(w,k)=>w[k]*sc(w),mx=Math.max(1,...W.map(w=>Math.max(tot(w),lineV(w,"std"),lineV(w,"flex"),lineV(w,"demand"))))*1.06;
+ const step=Math.pow(10,Math.floor(Math.log10(mx/5))),nice=[1,2,2.5,5,10].find(k=>k*step>=mx/5)*step,top=Math.ceil(mx/nice)*nice;
+ const y=v=>mg.t+(top-v)*(H-mg.t-mg.b)/top,xc=i=>mg.l+slot*(i+.5);
+ const fmt=v=>asp&&v>=1e6?(v/1e6).toFixed(1)+"M":v>=1000?Math.round(v/1000)+"K":v;
+ let s=`<svg viewBox="0 0 ${X} ${H}" width="100%">`;
+ for(let v=0;v<=top+1e-6;v+=nice)s+=`<line x1="${mg.l}" x2="${X-mg.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e6e8ec" stroke-dasharray="${v?'3 3':''}"/><text x="${mg.l-5}" y="${y(v)+3}" text-anchor="end">${fmt(v)}</text>`;
+ W.forEach((w,i)=>{let acc=0;SER.forEach(([k,,c])=>{const v=(w[k]||0)*sc(w);if(v>0){s+=`<rect x="${xc(i)-bw/2}" y="${y(acc+v)}" width="${bw}" height="${Math.max(0,y(acc)-y(acc+v))}" fill="${c}"/>`;acc+=v}});
+  s+=`<text x="${xc(i)}" y="${H-mg.b+13}" text-anchor="middle">${w.week}</text>`;
+  if(i===0||w.week===1)s+=`<text x="${xc(i)}" y="${H-mg.b+24}" text-anchor="middle">${w.year}</text>`});
+ s+=`<text x="${(X+mg.l)/2}" y="${H-3}" text-anchor="middle" style="font-size:11px;fill:#333">Week</text>`;
+ LINES.forEach(([k,,c,d])=>{s+=`<polyline fill="none" stroke="${c}" stroke-width="2" ${d?`stroke-dasharray="${d}" stroke-linecap="round"`:""} points="${W.map((w,i)=>xc(i)+","+y(lineV(w,k))).join(" ")}"/>`});
+ W.forEach((w,i)=>s+=`<rect class="hit" data-i="${i}" x="${xc(i)-slot/2}" y="${mg.t}" width="${slot}" height="${H-mg.t-mg.b}" fill="transparent"/>`);
+ $("chart").querySelectorAll("svg").forEach(e=>e.remove());$("chart").insertAdjacentHTML("afterbegin",s+"</svg>");
+ const tip=$("tip");$("chart").querySelectorAll(".hit").forEach(r=>{
+  r.onmousemove=e=>{const w=W[r.dataset.i],u=asp?"(value)":"(units)",box=$("chart").getBoundingClientRect(),F=asp?(x=>f0(x*w.asp)):f0;
+   tip.innerHTML=`<b>Week ${w.week}</b> ${u}`+SER.filter(x=>w[x[0]]>0).reverse().map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+
+    LINES.map(x=>`<div><span><u style="border-top:2px solid ${x[2]};display:inline-block;width:8px;margin-right:4px"></u>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+`<div><span>Capacity needed</span><b>${F(w.needed)}</b></div>`;
+   tip.style.display="block";tip.style.left=Math.min(e.clientX-box.left+14,box.width-230)+"px";tip.style.top=Math.max(0,e.clientY-box.top-20)+"px"};
+  r.onmouseleave=()=>tip.style.display="none"})}
+function render(){
+ const W=model(),S=k=>W.reduce((a,w)=>a+w[k],0),asp=st.mode==="A";
+ $("ct").textContent=`Warehouse outbound capacity - ${st.cum?"With":"Without"} cumulative blocks ${asp?"ASP":"Units"}`;
+ $("cum1").className="btn"+(st.cum?" on":"");$("cum0").className="btn"+(st.cum?"":" on");
+ $("mU").className="btn"+(asp?"":" on");$("mA").className="btn"+(asp?" on":"");$("mA").style.borderColor=asp?"var(--navy)":"var(--line)";
+ $("legend").innerHTML=SER.map(s=>`<span><i style="background:${s[2]}"></i>${s[1]}</span>`).join("")+LINES.map(l=>`<span><u style="border-color:${l[2]};${l[3]?"border-top-style:dotted":""}"></u>${l[1]}</span>`).join("");
+ drawChart(W);
+ $("tbl").innerHTML=`<tr>${["Week","Capacity Needed (Units)","Standard capacity (Units)","Flex Capacity (Units)","Capacity Std Utilization","Capacity Flex Utilization","Standard Total Costs","Flex Total Cost","Demand (Units)"].map(h=>`<th>${h}</th>`).join("")}</tr>`+
+  W.map(w=>`<tr><td>${w.week}</td><td>${f0(w.needed)}</td><td>${f0(w.std)}</td><td>${f0(w.flex)}</td><td>${pc(w.utilStd)}</td><td>${pc(w.utilFlex)}</td><td>${f0(w.costStd)}</td><td>${f0(w.costFlex)}</td><td>${f0(w.demand)}</td></tr>`).join("");
+ const need=S("needed"),aspDem=W.reduce((a,w)=>a+w.demand*w.asp,0);
+ $("side").innerHTML=`<div></div><div class="h">Standard</div><div class="h">Flex</div>
+  <div class="lab">Total Capacity needed</div><div class="span">${f0(need)}</div>
+  <div class="lab">Total Capacity</div><div class="v">${K(S("std"))}</div><div class="v">${K(S("flex"))}</div>
+  <div class="lab">Capacity utilization</div><div class="v">${pc(need/S("std"))}</div><div class="v">${pc(need/S("flex"))}</div>
+  <div class="lab">Total cost</div><div class="v">${K(S("costStd"))}</div><div class="v">${K(S("costFlex"))}</div>
+  <div class="lab">Total Demand</div><div class="dem"><span>Demand total (ASP)</span><b>${f0(aspDem)}</b><span style="margin-top:10px">Demand total (units)</span><b>${f0(S("demand"))}</b></div>`}
+// ---------- controls ----------
+Object.keys(ASSUMPTIONS.warehouses).forEach(k=>$("wh").add(new Option(k,k)));
+const wkOpts=()=>{$("wk").innerHTML="";$("wk").add(new Option("All","All"));raw(st.wh).forEach(w=>$("wk").add(new Option(w.week,w.week)));$("wk").value=st.wk};
+function syncInputs(){st.p.forEach((v,i)=>{$("s"+i).value=v;$("t"+i).value=v+"%"})}
+$("wh").onchange=()=>{st.wh=$("wh").value;st.wk="All";wkOpts();render()};
+$("wk").onchange=()=>{st.wk=$("wk").value;render()};
+for(let i=0;i<4;i++){$("s"+i).oninput=()=>{st.p[i]=+$("s"+i).value;syncInputs();render()};
+ $("t"+i).onchange=()=>{const v=parseFloat($("t"+i).value);st.p[i]=isNaN(v)?0:Math.min(100,Math.max(0,v));syncInputs();render()}}
+$("cum1").onclick=()=>{st.cum=true;render()};$("cum0").onclick=()=>{st.cum=false;render()};
+$("mU").onclick=()=>{st.mode="U";render()};$("mA").onclick=()=>{st.mode="A";render()};
+$("clear").onclick=()=>{st.wh="5030";st.wk="All";st.p=[...ASSUMPTIONS.defaults];st.cum=true;st.mode="U";$("wh").value="5030";wkOpts();syncInputs();render()};
+wkOpts();syncInputs();render();
+</script></body></html>
