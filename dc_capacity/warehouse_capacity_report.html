@@ -1,91 +1,124 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Warehouse report - outbound capacity</title>
+<html lang="en"><head><meta charset="utf-8"><title>Warehouse Capacity Analytics</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root{--navy:#0a2a5e;--ink:#1a1a1a;--mut:#8a8f98;--line:#d9dde3;--bg:#f0f0f0}
-*{box-sizing:border-box}body{margin:0;font:12px "Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg)}
-.top{background:#fff;display:flex;align-items:flex-end;height:60px;padding-left:16px;gap:6px;border-bottom:1px solid var(--line)}
-.logo{font:italic 800 17px Arial;letter-spacing:1.5px;color:var(--navy);align-self:center;margin-right:50px;white-space:nowrap}
-.tab{padding:0 26px;height:60px;display:flex;align-items:center;color:#a5a9b0;font-weight:600;white-space:nowrap}
-.tab.on{background:#fff;color:var(--navy);border-bottom:5px solid var(--navy)}
-.filters{display:flex;gap:12px;align-items:flex-start;padding:12px 24px;flex-wrap:wrap}
-.f{display:flex;flex-direction:column;gap:3px;min-width:110px}.f label{color:#a0a4ab;font-weight:600;max-width:140px}
-.f select,.f input[type=text]{height:22px;border:1px solid #fff;background:#fff;padding:0 4px;font-size:11px;width:110px}
-.f input[type=text]{width:62px}.f input[type=range]{width:110px;height:12px;margin:6px 0 0;accent-color:#7a8088}
-.right{display:flex;gap:12px;align-items:flex-start;margin-left:auto}.seg{display:flex;flex-direction:column;gap:3px}.seg b{font-size:13px}.seg div{display:flex}
-.btn{border:0;background:#fff;color:var(--ink);font:600 10px "Segoe UI",Arial;padding:7px 10px;cursor:pointer}
-.btn.on{background:var(--navy);color:#fff}.clear{white-space:nowrap;background:var(--navy);color:#fff;font-size:13px;padding:0 26px;height:52px;border:0;font-weight:600;cursor:pointer}
-.grid{display:grid;grid-template-columns:1fr 380px;gap:8px;padding:0 8px 8px}@media(max-width:1100px){.grid{grid-template-columns:1fr}}
-.panel{background:#fff;padding:12px 10px}
-.ctitle{display:flex;justify-content:space-between;align-items:flex-start}.ctitle h2{margin:0 0 2px 6px;font-size:16px}
-.ctitle small{display:block;margin-left:6px;color:#666;font-weight:600;font-size:10px;margin-bottom:6px}
-.legend{display:flex;flex-wrap:wrap;gap:2px 10px;margin:4px 6px;font-size:9px;color:#555}
-.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px}.legend u{display:inline-block;width:16px;margin-right:3px;border-top:2px solid;vertical-align:middle}
-#chart{position:relative}svg text{font:10px "Segoe UI",Arial;fill:#666}
-#tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);box-shadow:0 2px 8px #0003;padding:6px 8px;font-size:10px;display:none;z-index:5;white-space:nowrap}
-#tip div{display:flex;justify-content:space-between;gap:14px}#tip i{display:inline-block;width:8px;height:8px;margin-right:4px}
-.tw{max-height:300px;overflow:auto;margin-top:8px}table{border-collapse:collapse;width:100%}
-th{position:sticky;top:0;background:#fff;color:var(--navy);font-weight:700;padding:4px 6px;text-align:center;border-bottom:1px solid var(--navy);font-size:11px}
-td{padding:5px 6px;text-align:center;border-bottom:1px solid #e3e6ea;font-size:11px}tr:hover td{background:#f4f7fb}
-.side{display:grid;grid-template-columns:1fr 1fr 1fr;align-content:space-between;padding:16px 12px}
-.side .h{font-size:15px;text-align:center;padding-bottom:26px}.side .lab{font-size:15px;line-height:1.2;align-self:center;padding:22px 0}
-.side .v{font-size:15px;font-weight:700;text-align:center;align-self:center}.span{grid-column:2/4;text-align:center;font-size:17px;font-weight:700;align-self:center}
-.dem{grid-column:2/4;text-align:center}.dem span{display:block;font-size:11px;color:#555}.dem b{font-size:17px}
-.note{padding:6px 14px 14px;color:#777;font-size:10px}
+:root{--navy:#14305c;--ink:#1c2433;--mut:#6b7380;--line:#dfe3e8;--bg:#f4f5f7;--red:#e11d1d}
+*{box-sizing:border-box}
+body{margin:0;font:12px Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.card{background:#fff;border:1px solid var(--line)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 24px}
+header{background:#fff;border-bottom:1px solid var(--line)}
+header .in{max-width:1180px;margin:0 auto;padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start}
+h1{margin:0;font-size:20px;color:var(--navy)}header p{margin:4px 0 0;color:var(--mut);font-size:11px}
+.nav a{color:var(--mut);text-decoration:none;font-size:11px;padding:0 10px}.nav a+a{border-left:1px solid var(--line);color:var(--ink);font-weight:700;padding-right:0}
+.lab{font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);font-weight:600}
+/* filters */
+#filters{margin-top:12px;padding:14px 16px 8px}
+.fh{display:flex;justify-content:space-between;align-items:flex-start}.fh b{font-size:10px;letter-spacing:.04em;color:var(--navy)}.fh small{display:block;color:var(--mut);font-size:10px;margin-top:2px}
+.reset{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;padding:8px 14px;font:600 11px inherit;cursor:pointer;color:var(--ink)}
+.row{display:flex;gap:10px;margin-top:10px;align-items:flex-start;flex-wrap:wrap}
+.f{width:130px}.f .lab{display:block;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+select{appearance:none;width:130px;height:28px;border:1px solid var(--line);background:#f4f5f7 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7380' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 10px center;padding:0 10px;font:inherit;font-size:11px;color:var(--ink)}
+.f input[type=text]{width:42px;height:22px;border:1px solid var(--line);background:#eef0f3;text-align:center;font:inherit;font-size:10px;color:var(--ink)}
+input[type=range]{appearance:none;-webkit-appearance:none;display:block;width:130px;height:16px;margin:6px 0 0;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:#d6dbe2;border-radius:2px}
+input[type=range]::-moz-range-track{height:3px;background:#d6dbe2;border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;margin-top:-5px;border-radius:50%;background:#fff;border:2px solid var(--navy)}
+input[type=range]::-moz-range-thumb{width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--navy)}
+.seg{display:inline-flex;border:1px solid var(--navy)}.seg button{border:0;background:#fff;color:var(--ink);font:700 11px inherit;padding:8px 14px;cursor:pointer}.seg button.on{background:var(--navy);color:#fff}
+.defaults{border-top:1px solid var(--line);margin-top:12px;padding:8px 0 4px;color:var(--mut);font-size:9px}
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);margin-top:12px}.kpi{padding:16px;border-right:1px solid var(--line)}.kpi:last-child{border:0}
+.kpi b{display:block;font-size:22px;color:var(--navy);margin:8px 0 6px}.kpi span{color:var(--mut);font-size:10px}
+/* chart */
+#outlook{margin-top:12px;padding:12px 14px 6px}
+.ch{display:flex;justify-content:space-between;align-items:flex-start}.ch h2{margin:6px 0 2px;font-size:15px;color:var(--navy)}.ch small{color:var(--mut);font-size:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:14px 0 6px;font-size:10px;color:#444}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}.legend u{display:inline-block;width:16px;border-top:2px solid;margin-right:5px;vertical-align:3px}
+#chart{position:relative}svg text{font:10px Inter,"Segoe UI",Arial;fill:var(--mut)}
+#tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);box-shadow:0 4px 14px #0002;padding:8px 10px;font-size:10px;display:none;z-index:5;white-space:nowrap}
+#tip div{display:flex;justify-content:space-between;gap:16px;line-height:1.5}#tip i{display:inline-block;width:8px;height:8px;margin-right:5px}
+/* table */
+#detail{margin-top:12px;padding:12px 12px 14px}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}.dh b{font-size:14px;color:var(--navy)}.dh small{display:block;color:var(--mut);font-size:10px;margin-top:3px}
+.key{display:flex;gap:14px;font-size:9px;color:var(--mut)}.key i{display:inline-block;width:8px;height:8px;margin-right:4px}
+table{border-collapse:collapse;width:100%}
+th{background:var(--navy);color:#fff;font-weight:700;font-size:10px;padding:9px 10px;text-align:right;border-left:1px solid #2b4673}th:first-child,th:nth-child(2){text-align:left}
+td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);font-size:11px}
+tr.wk{cursor:pointer}tr.wk:hover td{background:#f6f8fb}tr.wk td:first-child{text-align:left;font-weight:700;white-space:nowrap}
+.chev{display:inline-block;width:14px;transition:transform .15s}.open .chev{transform:rotate(90deg)}
+.prof{display:flex;gap:2px;align-items:flex-end;height:22px}.prof i{display:block;width:8px;background:var(--navy)}.prof i.we{background:#cfd4db}.prof.over i:not(.we){background:var(--red)}
+tr.day td{background:#fafbfc;color:#444;font-size:10px}tr.day td:first-child{padding-left:30px;font-weight:400}
+tr.tot td{font-weight:700;border-top:2px solid var(--navy);border-bottom:0}
+.over{color:var(--red);font-weight:700}
+.note{color:var(--mut);font-size:10px;padding:10px 2px 0}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
-<div class="top"><div class="logo">AMER SPORTS</div><div class="tab on">Warehouse report</div></div>
-<div class="filters">
- <div class="f"><label>Warehouse</label><select id="wh"></select></div>
- <div class="f"><label>Week</label><select id="wk"></select></div>
- <div class="f"><label>Delivery Block % release</label><input type="text" id="t0"><input type="range" id="s0" min="0" max="100"></div>
- <div class="f"><label>Credit Block % release</label><input type="text" id="t1"><input type="range" id="s1" min="0" max="100"></div>
- <div class="f"><label>Customer Reservation % call off</label><input type="text" id="t2"><input type="range" id="s2" min="0" max="100"></div>
- <div class="f"><label>Country Reservation % call off</label><input type="text" id="t3"><input type="range" id="s3" min="0" max="100"></div>
- <div class="right"><div class="seg"><b>Show chart ...</b><div><button class="btn on" id="cum1">with cumulative blocks</button><button class="btn" id="cum0">without cumulative blocks</button></div></div>
- <button class="clear" id="clear">Clear all filter</button></div>
-</div>
-<div class="grid">
- <div>
-  <div class="panel">
-   <div class="ctitle"><div><h2 id="ct">Warehouse outbound capacity - With cumulative blocks Units</h2><small>Outbound logistics</small></div>
-    <div><button class="btn on" id="mU" style="padding:8px 26px;font-size:11px">Units</button><button class="btn" id="mA" style="padding:8px 26px;font-size:11px;border:1px solid var(--line)">ASP</button></div></div>
-   <div class="legend" id="legend"></div><div id="chart"><div id="tip"></div></div>
+<header><div class="in"><div><h1>Warehouse Capacity Analytics</h1><p id="sub"></p></div>
+ <div class="nav"><a href="#filters">Planning view</a><a href="#detail">Weekly capacity</a></div></div></header>
+<div class="wrap">
+ <section class="card" id="filters">
+  <div class="fh"><div><b>REPORT FILTERS</b><small>Slicers and release assumptions</small></div>
+   <button class="reset" id="reset"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 20H9L3.5 14.5a2 2 0 010-2.8L12 3.2a2 2 0 012.8 0l5.7 5.7a2 2 0 010 2.8L13 19"/><path d="M7 11l6 6"/></svg>Reset filters</button></div>
+  <div class="row">
+   <div class="f"><span class="lab">Warehouse</span><select id="wh"></select></div>
+   <div class="f"><span class="lab">Week</span><select id="wk"></select></div>
+   <div class="f"><span class="lab">Delivery block % release</span><input type="text" id="t0"><input type="range" id="s0" min="0" max="100"></div>
+   <div class="f"><span class="lab">Credit block % release</span><input type="text" id="t1"><input type="range" id="s1" min="0" max="100"></div>
+   <div class="f"><span class="lab">Customer reservation % call off</span><input type="text" id="t2"><input type="range" id="s2" min="0" max="100"></div>
+   <div class="f"><span class="lab">Country reservation % call off</span><input type="text" id="t3"><input type="range" id="s3" min="0" max="100"></div>
+   <div class="f" style="width:auto"><span class="lab">Show chart ...</span><div class="seg"><button id="cum1" class="on">Included</button><button id="cum0">Excluded</button></div></div>
   </div>
-  <div class="panel" style="margin-top:8px"><div class="tw"><table id="tbl"></table></div></div>
- </div>
- <div class="panel side" id="side"></div>
+  <div class="defaults" id="defaults"></div>
+ </section>
+ <section class="card kpis" id="kpis"></section>
+ <section class="card" id="outlook">
+  <div class="ch"><div><span class="lab">Capacity outlook</span><h2>Weekly order book vs. available capacity</h2><small id="csub"></small></div>
+   <div class="seg"><button id="mU" class="on">Units</button><button id="mA">ASP</button></div></div>
+  <div class="legend" id="legend"></div><div id="chart"><div id="tip"></div></div>
+ </section>
+ <section class="card" id="detail">
+  <div class="dh"><div><b>Weekly capacity detail</b><small>Expand one week for Monday-Sunday detail, including weekends. The daily split is illustrative.</small></div>
+   <div class="key"><span><i style="background:var(--navy)"></i>Weekday</span><span><i style="background:#cfd4db"></i>Weekend</span></div></div>
+  <table id="tbl"></table>
+ </section>
+ <div class="note">Demo with synthetic data, not real Amer Sports figures. Block and reservation logic, capacities and unit costs are assumptions: see the ASSUMPTIONS object in this file.</div>
 </div>
-<div class="note">Demo with synthetic data (not real Amer Sports figures). Block/reservation logic, capacities and unit costs are assumptions - see the ASSUMPTIONS object in this file.</div>
 <script>
 // ---------- ASSUMPTIONS (replace with real data / rates) ----------
-const ASSUMPTIONS={weeks:13,unitCostStd:1.0,overflowPremium:0.6,flexPremium:0.3,
- warehouses:{5030:1,5040:.7,5050:1.3,5060:.5},defaults:[10,0,0,0]};
+const ASSUMPTIONS={weeks:13,stdRate:0.42,flexRate:0.71, // EUR per unit handled in standard / flex-only capacity
+ warehouses:{5030:.3,5040:.2,5050:.35,5060:.15},defaults:[55,50,45,50],
+ dayDemand:[.22,.21,.20,.19,.14,.03,.01],dayStd:[.2,.2,.2,.2,.2,0,0],dayFlex:[.19,.19,.19,.19,.19,.04,.01]};
+const DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const SER=[ // key,label,colour
- ["sto","STO","#bfe0f3"],["free","Total Free Orders","#7fc8ea"],["delivery","Delivery","#1397d3"],["promo","Promo","#0b3a55"],
- ["po","Purchase Order","#3b4ba8"],["prop","Order Proposal","#6f86a8"],["dblkR","Delivery Block (released)","#12b32d"],
- ["cblkR","Credit Block (released)","#3dd68c"],["custCO","Customer Reservation (called off)","#9ee0bd"],["ctryCO","Country Reservation (called off)","#cdeedd"],
- ["remCust","Remaining Customer Reservation","#fde3d1"],["remCtry","Remaining Country Reservation","#f9a67a"],
- ["cblk","Credit Blocked","#f97f3d"],["dblk","Delivery Blocked","#c04f15"]];
-const LINES=[["std","Standard capacity","#f08a9a",""],["flex","Flex capacity","#1a1aff","2 3"],["demand","Demand","#17505f",""]];
+ ["sto","STO","#d3e2f1"],["free","Total Free Orders","#a9c8e8"],["delivery","Delivery","#5b9bd5"],["promo","Promo","#1d2f5c"],
+ ["po","Purchase Order","#2f4f9a"],["prop","Order Proposal","#9b9fa6"],["dblkR","Delivery Block released","#8fc79a"],
+ ["cblkR","Credit Block released","#4f9d69"],["custCO","Customer Reservation called off","#c5e3cd"],["ctryCO","Country Reservation called off","#e0f0e4"],
+ ["remCust","Remaining Customer Reservation","#f1dfc8"],["remCtry","Remaining Country Reservation","#e5bf95"],
+ ["cblk","Credit Blocked","#ee8a3c"],["dblk","Delivery Blocked","#c4571f"]];
+const LINES=[["std","Standard capacity","#f08a2c",""],["flex","Flex capacity","#1f3b73","1 4"],["demand","Demand","#1a2f55",""]];
 // ---------- synthetic data ----------
 function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function isoWeek(d){d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-n);
  return[d.getUTCFullYear(),Math.ceil(((d-new Date(Date.UTC(d.getUTCFullYear(),0,1)))/864e5+1)/7)]}
 const cache={};
-function raw(wh){ // per-week base figures for a warehouse
- if(cache[wh])return cache[wh];const sc=ASSUMPTIONS.warehouses[wh],r=rng(+wh),u=(a,b)=>a+(b-a)*r(),N=ASSUMPTIONS.weeks,out=[],now=new Date();
+function raw(wh){ // per-week base figures; "All" sums the warehouses
+ if(cache[wh])return cache[wh];
+ if(wh==="All"){const parts=Object.keys(ASSUMPTIONS.warehouses).map(raw);
+  return cache.All=parts[0].map((w,i)=>{const o={week:w.week,year:w.year};Object.keys(w).forEach(k=>{if(k!=="week"&&k!=="year")o[k]=parts.reduce((a,p)=>a+p[i][k],0)});o.asp=parts.reduce((a,p)=>a+p[i].asp,0)/parts.length;return o})}
+ const sc=ASSUMPTIONS.warehouses[wh],r=rng(+wh),u=(a,b)=>a+(b-a)*r(),N=ASSUMPTIONS.weeks,out=[],now=new Date();
  for(let i=0;i<N;i++){
-  const d=new Date(now);d.setDate(d.getDate()+7*i);const [yr,wk]=isoWeek(d),h=i/(N-1),b=260000*sc,nz=()=>u(.85,1.15),late=i>=N-2?(i===N-1?.55:.7):1;
+  const d=new Date(now);d.setDate(d.getDate()+7*i);const [yr,wk]=isoWeek(d),h=i/(N-1),b=1400000*sc,nz=()=>u(.85,1.15),late=i>=N-2?(i===N-1?.7:.85):1;
+  const std=b*late*(i%5===4?.97:1)*u(.97,1.03);
   out.push({week:wk,year:yr,
-   sto:b*.10*(1-.5*h)*nz(),free:b*.5*Math.pow(1-h,1.4)*nz(),delivery:b*.35*Math.pow(1-h,2.2)*nz(),promo:b*.03*nz(),
+   sto:b*.08*(1-.5*h)*nz(),free:b*.42*Math.pow(1-h,1.4)*nz(),delivery:b*.28*Math.pow(1-h,2.2)*nz(),promo:b*.03*nz(),
    po:b*(.05+.10*h)*nz(),prop:b*(.04+.14*h)*nz()*late,
-   nDblk:b*.03*(.6+h)*nz(),nCblk:b*.045*(.6+h)*nz(),nCust:b*.035*(.6+h)*nz(),nCtry:b*.03*(.6+h)*nz(),
-   std:b*.88*late*(i%5===4?.97:1)*u(.97,1.03),flexF:i===N-1?.4:u(.97,1.1),asp:u(118,142)});
+   nDblk:b*.0105*(.6+h)*nz(),nCblk:b*.016*(.6+h)*nz(),nCust:b*.012*(.6+h)*nz(),nCtry:b*.0105*(.6+h)*nz(),
+   std,flex:std*u(1.1,1.3),asp:u(118,142)}); // flex = standard + flex ceiling
  }
- out.forEach(w=>w.flex=w.std*w.flexF);
  return cache[wh]=out}
 // ---------- model ----------
-const st={wh:"5030",wk:"All",p:[...ASSUMPTIONS.defaults],cum:true,mode:"U"};
+const st={wh:"All",wk:"All",p:[...ASSUMPTIONS.defaults],cum:true,mode:"U",open:new Set()};
 function model(){
  const R=raw(st.wh),[pd,pc,pu,py]=st.p.map(x=>x/100);let cd=0,cc=0,cu=0,cy=0;
  const all=R.map(w=>{
@@ -96,52 +129,58 @@ function model(){
   o.demand=o.sto+o.free+o.delivery+o.promo+o.po+o.prop;
   o.needed=o.demand+o.dblkR+o.cblkR+o.custCO+o.ctryCO;
   o.std=w.std;o.flex=w.flex;
-  const cost=cap=>{const done=Math.min(o.needed,cap),over=o.needed-done;return done*ASSUMPTIONS.unitCostStd+over*(ASSUMPTIONS.unitCostStd+ASSUMPTIONS.overflowPremium)};
-  o.costStd=cost(o.std);o.costFlex=cost(o.flex)+Math.max(0,Math.min(o.needed,o.flex)-o.std)*ASSUMPTIONS.flexPremium;
+  o.costStd=Math.min(o.needed,o.std)*ASSUMPTIONS.stdRate;
+  o.costFlex=Math.max(0,Math.min(o.needed,o.flex)-o.std)*ASSUMPTIONS.flexRate;
   o.utilStd=o.needed/o.std;o.utilFlex=o.needed/o.flex;return o});
  return st.wk==="All"?all:all.filter(w=>String(w.week)===st.wk)}
 // ---------- rendering ----------
-const $=id=>document.getElementById(id),f0=v=>Math.round(v).toLocaleString("en-US"),K=v=>f0(v/1000)+"K",pc=v=>Math.round(v*100)+"%";
+const $=id=>document.getElementById(id),f0=v=>Math.round(v).toLocaleString("en-US"),eur=v=>"€"+f0(v),p1=v=>(v*100).toFixed(1)+"%";
 function drawChart(W){
- const asp=st.mode==="A",X=800,H=360,mg={l:46,r:8,t:8,b:36},n=W.length,slot=(X-mg.l-mg.r)/n,bw=Math.min(slot*.78,70);
- const sc=w=>asp?w.asp:1,tot=w=>SER.reduce((a,s)=>a+(w[s[0]]||0),0)*sc(w);
-  const lineV=(w,k)=>w[k]*sc(w),mx=Math.max(1,...W.map(w=>Math.max(tot(w),lineV(w,"std"),lineV(w,"flex"),lineV(w,"demand"))))*1.06;
- const step=Math.pow(10,Math.floor(Math.log10(mx/5))),nice=[1,2,2.5,5,10].find(k=>k*step>=mx/5)*step,top=Math.ceil(mx/nice)*nice;
+ const asp=st.mode==="A",X=1100,H=300,mg={l:44,r:10,t:10,b:38},n=W.length,slot=(X-mg.l-mg.r)/n,bw=Math.min(slot*.62,60);
+ const sc=w=>asp?w.asp:1,tot=w=>SER.reduce((a,s)=>a+(w[s[0]]||0),0)*sc(w),lineV=(w,k)=>w[k]*sc(w);
+ const mx=Math.max(1,...W.map(w=>Math.max(tot(w),lineV(w,"std"),lineV(w,"flex"),lineV(w,"demand"))))*1.04;
+ const step=Math.pow(10,Math.floor(Math.log10(mx/4))),nice=[1,1.5,2,2.5,3,5,10].find(k=>k*step>=mx/4)*step,top=Math.ceil(mx/nice)*nice;
  const y=v=>mg.t+(top-v)*(H-mg.t-mg.b)/top,xc=i=>mg.l+slot*(i+.5);
- const fmt=v=>asp&&v>=1e6?(v/1e6).toFixed(1)+"M":v>=1000?Math.round(v/1000)+"K":v;
+ const fmt=v=>v>=1e6?+(v/1e6).toFixed(2)+"M":v>=1000?Math.round(v/1000)+"K":v;
  let s=`<svg viewBox="0 0 ${X} ${H}" width="100%">`;
- for(let v=0;v<=top+1e-6;v+=nice)s+=`<line x1="${mg.l}" x2="${X-mg.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e6e8ec" stroke-dasharray="${v?'3 3':''}"/><text x="${mg.l-5}" y="${y(v)+3}" text-anchor="end">${fmt(v)}</text>`;
- W.forEach((w,i)=>{let acc=0;SER.forEach(([k,,c])=>{const v=(w[k]||0)*sc(w);if(v>0){s+=`<rect x="${xc(i)-bw/2}" y="${y(acc+v)}" width="${bw}" height="${Math.max(0,y(acc)-y(acc+v))}" fill="${c}"/>`;acc+=v}});
-  s+=`<text x="${xc(i)}" y="${H-mg.b+13}" text-anchor="middle">${w.week}</text>`;
-  if(i===0||w.week===1)s+=`<text x="${xc(i)}" y="${H-mg.b+24}" text-anchor="middle">${w.year}</text>`});
- s+=`<text x="${(X+mg.l)/2}" y="${H-3}" text-anchor="middle" style="font-size:11px;fill:#333">Week</text>`;
- LINES.forEach(([k,,c,d])=>{s+=`<polyline fill="none" stroke="${c}" stroke-width="2" ${d?`stroke-dasharray="${d}" stroke-linecap="round"`:""} points="${W.map((w,i)=>xc(i)+","+y(lineV(w,k))).join(" ")}"/>`});
+ for(let v=0;v<=top+1e-6;v+=nice)s+=`<line x1="${mg.l}" x2="${X-mg.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e8ebef"/><text x="${mg.l-8}" y="${y(v)+3}" text-anchor="end">${fmt(v)}</text>`;
+ W.forEach((w,i)=>{let acc=0;SER.forEach(([k,,c])=>{const v=(w[k]||0)*sc(w);if(v>0){s+=`<rect x="${xc(i)-bw/2}" y="${y(acc+v)}" width="${bw}" height="${Math.max(0,y(acc)-y(acc+v))}" fill="${c}" stroke="#fff" stroke-width=".6"/>`;acc+=v}});
+  s+=`<text x="${xc(i)}" y="${H-mg.b+16}" text-anchor="middle">${w.week}</text>`});
+ s+=`<text x="${(X+mg.l)/2}" y="${H-6}" text-anchor="middle" style="font-size:10px">Week</text>`;
+ LINES.forEach(([k,,c,d])=>{s+=`<polyline fill="none" stroke="${c}" stroke-width="${d?2.2:2}" ${d?`stroke-dasharray="${d}" stroke-linecap="round"`:""} stroke-linejoin="round" points="${W.map((w,i)=>xc(i)+","+y(lineV(w,k))).join(" ")}"/>`});
  W.forEach((w,i)=>s+=`<rect class="hit" data-i="${i}" x="${xc(i)-slot/2}" y="${mg.t}" width="${slot}" height="${H-mg.t-mg.b}" fill="transparent"/>`);
  $("chart").querySelectorAll("svg").forEach(e=>e.remove());$("chart").insertAdjacentHTML("afterbegin",s+"</svg>");
  const tip=$("tip");$("chart").querySelectorAll(".hit").forEach(r=>{
-  r.onmousemove=e=>{const w=W[r.dataset.i],u=asp?"(value)":"(units)",box=$("chart").getBoundingClientRect(),F=asp?(x=>f0(x*w.asp)):f0;
-   tip.innerHTML=`<b>Week ${w.week}</b> ${u}`+SER.filter(x=>w[x[0]]>0).reverse().map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+
-    LINES.map(x=>`<div><span><u style="border-top:2px solid ${x[2]};display:inline-block;width:8px;margin-right:4px"></u>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+`<div><span>Capacity needed</span><b>${F(w.needed)}</b></div>`;
-   tip.style.display="block";tip.style.left=Math.min(e.clientX-box.left+14,box.width-230)+"px";tip.style.top=Math.max(0,e.clientY-box.top-20)+"px"};
+  r.onmousemove=e=>{const w=W[r.dataset.i],box=$("chart").getBoundingClientRect(),F=asp?(x=>f0(x*w.asp)):f0;
+   tip.innerHTML=`<b>Week ${w.week}</b> ${asp?"(value)":"(units)"}`+SER.filter(x=>w[x[0]]>0).reverse().map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+
+    LINES.map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+`<div><span>Capacity needed</span><b>${F(w.needed)}</b></div>`;
+   tip.style.display="block";tip.style.left=Math.min(e.clientX-box.left+14,box.width-250)+"px";tip.style.top=Math.max(0,e.clientY-box.top-20)+"px"};
   r.onmouseleave=()=>tip.style.display="none"})}
+function dayRows(w){ // illustrative Monday-Sunday split of the week
+ const A=ASSUMPTIONS;return DAYS.map((d,i)=>{const needed=w.needed*A.dayDemand[i],std=w.std*A.dayStd[i],flex=w.flex*A.dayFlex[i];
+  return{d,needed,std,flex,demand:w.demand*A.dayDemand[i],us:std?needed/std:null,uf:flex?needed/flex:null}})}
 function render(){
- const W=model(),S=k=>W.reduce((a,w)=>a+w[k],0),asp=st.mode==="A";
- $("ct").textContent=`Warehouse outbound capacity - ${st.cum?"With":"Without"} cumulative blocks ${asp?"ASP":"Units"}`;
- $("cum1").className="btn"+(st.cum?" on":"");$("cum0").className="btn"+(st.cum?"":" on");
- $("mU").className="btn"+(asp?"":" on");$("mA").className="btn"+(asp?" on":"");$("mA").style.borderColor=asp?"var(--navy)":"var(--line)";
- $("legend").innerHTML=SER.map(s=>`<span><i style="background:${s[2]}"></i>${s[1]}</span>`).join("")+LINES.map(l=>`<span><u style="border-color:${l[2]};${l[3]?"border-top-style:dotted":""}"></u>${l[1]}</span>`).join("");
+ const W=model(),S=k=>W.reduce((a,w)=>a+w[k],0),asp=st.mode==="A",need=S("needed"),R=raw(st.wh);
+ $("sub").textContent=`Outbound logistics · planning horizon W${R[0].week}-W${R[R.length-1].week} · ${R[0].year}`;
+ $("defaults").textContent=`Defaults: ${ASSUMPTIONS.defaults[0]}% / ${ASSUMPTIONS.defaults[1]}% / ${ASSUMPTIONS.defaults[2]}% / ${ASSUMPTIONS.defaults[3]}% release assumptions.`;
+ $("cum1").className=st.cum?"on":"";$("cum0").className=st.cum?"":"on";$("mU").className=asp?"":"on";$("mA").className=asp?"on":"";
+ $("csub").textContent=`Cumulative blocks ${st.cum?"included":"excluded"} · ${st.wh==="All"?"All warehouses":"Warehouse "+st.wh}${asp?" · value (ASP)":""}`;
+ $("kpis").innerHTML=[["Capacity needed",f0(need),"Planned outbound units"],["Total capacity",f0(S("flex")),"Standard + flex ceiling"],
+  ["Capacity utilization",p1(need/S("flex")),"Within available capacity"],["Total cost",eur(S("costStd")+S("costFlex")),"Standard and flex handling"],
+  ["Total demand",f0(S("demand")),"Forecast in selected period"]].map(k=>`<div class="kpi"><span class="lab">${k[0]}</span><b>${k[1]}</b><span>${k[2]}</span></div>`).join("");
+ $("legend").innerHTML=SER.map(s=>`<span><i style="background:${s[2]}"></i>${s[1]}</span>`).join("")+LINES.map(l=>`<span><u style="border-color:${l[2]};${l[3]?"border-top-style:dotted;border-top-width:3px":""}"></u>${l[1]}</span>`).join("");
  drawChart(W);
- $("tbl").innerHTML=`<tr>${["Week","Capacity Needed (Units)","Standard capacity (Units)","Flex Capacity (Units)","Capacity Std Utilization","Capacity Flex Utilization","Standard Total Costs","Flex Total Cost","Demand (Units)"].map(h=>`<th>${h}</th>`).join("")}</tr>`+
-  W.map(w=>`<tr><td>${w.week}</td><td>${f0(w.needed)}</td><td>${f0(w.std)}</td><td>${f0(w.flex)}</td><td>${pc(w.utilStd)}</td><td>${pc(w.utilFlex)}</td><td>${f0(w.costStd)}</td><td>${f0(w.costFlex)}</td><td>${f0(w.demand)}</td></tr>`).join("");
- const need=S("needed"),aspDem=W.reduce((a,w)=>a+w.demand*w.asp,0);
- $("side").innerHTML=`<div></div><div class="h">Standard</div><div class="h">Flex</div>
-  <div class="lab">Total Capacity needed</div><div class="span">${f0(need)}</div>
-  <div class="lab">Total Capacity</div><div class="v">${K(S("std"))}</div><div class="v">${K(S("flex"))}</div>
-  <div class="lab">Capacity utilization</div><div class="v">${pc(need/S("std"))}</div><div class="v">${pc(need/S("flex"))}</div>
-  <div class="lab">Total cost</div><div class="v">${K(S("costStd"))}</div><div class="v">${K(S("costFlex"))}</div>
-  <div class="lab">Total Demand</div><div class="dem"><span>Demand total (ASP)</span><b>${f0(aspDem)}</b><span style="margin-top:10px">Demand total (units)</span><b>${f0(S("demand"))}</b></div>`}
+ const cell=(v,over)=>`<td${over?' class="over"':""}>${v}</td>`;
+ let t=`<tr><th>Week</th><th>Daily profile</th>${["Capacity Needed (Units)","Standard capacity (Units)","Flex Capacity (Units)","Capacity Std Utilization","Capacity Flex Utilization","Standard Total Costs","Flex Total Cost","Demand (Units)"].map(h=>`<th>${h}</th>`).join("")}</tr>`;
+ W.forEach(w=>{const d=dayRows(w),mxd=Math.max(...d.map(x=>x.needed)),isOpen=st.open.has(w.week);
+  const prof=`<div class="prof${w.utilStd>1?" over":""}">${d.map((x,i)=>`<i class="${i>4?"we":""}" style="height:${Math.max(3,Math.round(x.needed/mxd*22))}px"></i>`).join("")}</div>`;
+  t+=`<tr class="wk${isOpen?" open":""}" data-w="${w.week}"><td><span class="chev">›</span> ${w.week}</td><td>${prof}</td>${cell(f0(w.needed))}${cell(f0(w.std))}${cell(f0(w.flex))}${cell(p1(w.utilStd),w.utilStd>1)}${cell(p1(w.utilFlex),w.utilFlex>1)}${cell(eur(w.costStd))}${cell(eur(w.costFlex),w.costFlex>0)}${cell(f0(w.demand))}</tr>`;
+  if(isOpen)d.forEach(x=>{t+=`<tr class="day"><td>${x.d}</td><td></td>${cell(f0(x.needed))}${cell(f0(x.std))}${cell(f0(x.flex))}${cell(x.us==null?"-":p1(x.us),x.us>1)}${cell(x.uf==null?"-":p1(x.uf),x.uf>1)}<td>-</td><td>-</td>${cell(f0(x.demand))}</tr>`})});
+ t+=`<tr class="tot"><td>Total</td><td></td>${cell(f0(need))}${cell(f0(S("std")))}${cell(f0(S("flex")))}${cell(p1(need/S("std")))}${cell(p1(need/S("flex")))}${cell(eur(S("costStd")))}${cell(eur(S("costFlex")))}${cell(f0(S("demand")))}</tr>`;
+ $("tbl").innerHTML=t;
+ $("tbl").querySelectorAll("tr.wk").forEach(r=>r.onclick=()=>{const w=+r.dataset.w;st.open.has(w)?st.open.delete(w):st.open.add(w);render()})}
 // ---------- controls ----------
-Object.keys(ASSUMPTIONS.warehouses).forEach(k=>$("wh").add(new Option(k,k)));
+["All",...Object.keys(ASSUMPTIONS.warehouses)].forEach(k=>$("wh").add(new Option(k,k)));
 const wkOpts=()=>{$("wk").innerHTML="";$("wk").add(new Option("All","All"));raw(st.wh).forEach(w=>$("wk").add(new Option(w.week,w.week)));$("wk").value=st.wk};
 function syncInputs(){st.p.forEach((v,i)=>{$("s"+i).value=v;$("t"+i).value=v+"%"})}
 $("wh").onchange=()=>{st.wh=$("wh").value;st.wk="All";wkOpts();render()};
@@ -150,6 +189,6 @@ for(let i=0;i<4;i++){$("s"+i).oninput=()=>{st.p[i]=+$("s"+i).value;syncInputs();
  $("t"+i).onchange=()=>{const v=parseFloat($("t"+i).value);st.p[i]=isNaN(v)?0:Math.min(100,Math.max(0,v));syncInputs();render()}}
 $("cum1").onclick=()=>{st.cum=true;render()};$("cum0").onclick=()=>{st.cum=false;render()};
 $("mU").onclick=()=>{st.mode="U";render()};$("mA").onclick=()=>{st.mode="A";render()};
-$("clear").onclick=()=>{st.wh="5030";st.wk="All";st.p=[...ASSUMPTIONS.defaults];st.cum=true;st.mode="U";$("wh").value="5030";wkOpts();syncInputs();render()};
+$("reset").onclick=()=>{st.wh="All";st.wk="All";st.p=[...ASSUMPTIONS.defaults];st.cum=true;st.mode="U";st.open.clear();$("wh").value="All";wkOpts();syncInputs();render()};
 wkOpts();syncInputs();render();
 </script></body></html>
