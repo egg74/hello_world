@@ -51,6 +51,13 @@ tr.wk{cursor:pointer}tr.wk:hover td{background:#f6f8fb}tr.wk td:first-child{text
 tr.day td{background:#fafbfc;color:#444;font-size:10px}tr.day td:first-child{padding-left:30px;font-weight:400}
 tr.tot td{font-weight:700;border-top:2px solid var(--navy);border-bottom:0}
 .over{color:var(--red);font-weight:700}
+#alerts{margin-top:12px;border-left:4px solid var(--line)}#alerts.crit{border-left-color:var(--red)}#alerts.warn{border-left-color:#f08a2c}#alerts.ok{border-left-color:#2e9e5b}
+.ah{padding:12px 16px;display:flex;justify-content:space-between;gap:12px;align-items:center}.ah b{font-size:13px;color:var(--navy)}.ah small{display:block;color:var(--mut);font-size:10px;margin-top:3px}
+#alerts.crit .ah{background:#fdf3f3}#alerts.warn .ah{background:#fff8f0}#alerts.ok .ah{background:#f2faf5}
+.ai{display:grid;grid-template-columns:84px 50px 1fr 210px;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line);cursor:pointer;font-size:11px}.ai:hover{background:#f6f8fb}.ai em{font-style:normal;color:var(--mut)}
+.pill{display:inline-block;font:700 9px inherit;padding:2px 7px;border-radius:9px;color:#fff;text-transform:uppercase;letter-spacing:.03em;margin-left:6px}
+.pill.crit{background:var(--red)}.pill.warn{background:#f08a2c}.pill.watch{background:#8a93a3}
+.ai .pill{margin:0;text-align:center}
 .note{color:var(--mut);font-size:10px;padding:10px 2px 0}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head><body>
@@ -72,6 +79,7 @@ tr.tot td{font-weight:700;border-top:2px solid var(--navy);border-bottom:0}
   <div class="defaults" id="defaults"></div>
  </section>
  <section class="card kpis" id="kpis"></section>
+ <section class="card" id="alerts"></section>
  <section class="card" id="outlook">
   <div class="ch"><div><span class="lab">Capacity outlook</span><h2>Weekly order book vs. available capacity</h2><small id="csub"></small></div>
    <div class="seg"><button id="mU" class="on">Units</button><button id="mA">ASP</button></div></div>
@@ -87,7 +95,8 @@ tr.tot td{font-weight:700;border-top:2px solid var(--navy);border-bottom:0}
 <script>
 // ---------- ASSUMPTIONS (replace with real data / rates) ----------
 const ASSUMPTIONS={weeks:13,stdRate:0.42,flexRate:0.71, // EUR per unit handled in standard / flex-only capacity
- warehouses:{5030:.3,5040:.2,5050:.35,5060:.15},defaults:[55,50,45,50],
+ warehouses:{5030:.3,5040:.2,5050:.35,5060:.15},defaults:[55,50,45,50],watchUtil:0.9, // watch = standard utilization at or above this
+ 
  dayDemand:[.22,.21,.20,.19,.14,.03,.01],dayStd:[.2,.2,.2,.2,.2,0,0],dayFlex:[.19,.19,.19,.19,.19,.04,.01]};
 const DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const SER=[ // key,label,colour
@@ -131,7 +140,8 @@ function model(){
   o.std=w.std;o.flex=w.flex;
   o.costStd=Math.min(o.needed,o.std)*ASSUMPTIONS.stdRate;
   o.costFlex=Math.max(0,Math.min(o.needed,o.flex)-o.std)*ASSUMPTIONS.flexRate;
-  o.utilStd=o.needed/o.std;o.utilFlex=o.needed/o.flex;return o});
+  o.utilStd=o.needed/o.std;o.utilFlex=o.needed/o.flex;
+  o.status=o.needed>o.flex?"crit":o.needed>o.std?"warn":o.utilStd>=ASSUMPTIONS.watchUtil?"watch":"";return o});
  return st.wk==="All"?all:all.filter(w=>String(w.week)===st.wk)}
 // ---------- rendering ----------
 const $=id=>document.getElementById(id),f0=v=>Math.round(v).toLocaleString("en-US"),eur=v=>"€"+f0(v),p1=v=>(v*100).toFixed(1)+"%";
@@ -144,6 +154,8 @@ function drawChart(W){
  const fmt=v=>v>=1e6?+(v/1e6).toFixed(2)+"M":v>=1000?Math.round(v/1000)+"K":v;
  let s=`<svg viewBox="0 0 ${X} ${H}" width="100%">`;
  for(let v=0;v<=top+1e-6;v+=nice)s+=`<line x1="${mg.l}" x2="${X-mg.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e8ebef"/><text x="${mg.l-8}" y="${y(v)+3}" text-anchor="end">${fmt(v)}</text>`;
+ W.forEach((w,i)=>{if(w.status==="crit"||w.status==="warn"){const c=w.status==="crit"?"#e11d1d":"#f08a2c";
+  s+=`<rect x="${xc(i)-slot/2+2}" y="${mg.t}" width="${slot-4}" height="${H-mg.t-mg.b}" fill="${c}" opacity=".09"/><polygon points="${xc(i)-5},${mg.t+12} ${xc(i)+5},${mg.t+12} ${xc(i)},${mg.t+3}" fill="${c}"/>`}});
  W.forEach((w,i)=>{let acc=0;SER.forEach(([k,,c])=>{const v=(w[k]||0)*sc(w);if(v>0){s+=`<rect x="${xc(i)-bw/2}" y="${y(acc+v)}" width="${bw}" height="${Math.max(0,y(acc)-y(acc+v))}" fill="${c}" stroke="#fff" stroke-width=".6"/>`;acc+=v}});
   s+=`<text x="${xc(i)}" y="${H-mg.b+16}" text-anchor="middle">${w.week}</text>`});
  s+=`<text x="${(X+mg.l)/2}" y="${H-6}" text-anchor="middle" style="font-size:10px">Week</text>`;
@@ -153,9 +165,22 @@ function drawChart(W){
  const tip=$("tip");$("chart").querySelectorAll(".hit").forEach(r=>{
   r.onmousemove=e=>{const w=W[r.dataset.i],box=$("chart").getBoundingClientRect(),F=asp?(x=>f0(x*w.asp)):f0;
    tip.innerHTML=`<b>Week ${w.week}</b> ${asp?"(value)":"(units)"}`+SER.filter(x=>w[x[0]]>0).reverse().map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+
-    LINES.map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+`<div><span>Capacity needed</span><b>${F(w.needed)}</b></div>`;
+    LINES.map(x=>`<div><span><i style="background:${x[2]}"></i>${x[1]}</span><b>${F(w[x[0]])}</b></div>`).join("")+`<div><span>Capacity needed</span><b>${F(w.needed)}</b></div>`+(w.status==='crit'?`<div class="over"><span>Shortfall vs flex ceiling</span><b>${f0(w.needed-w.flex)} units</b></div>`:w.status==='warn'?`<div style="color:#c4640f"><span>Flex needed</span><b>${f0(w.needed-w.std)} units</b></div>`:"");
    tip.style.display="block";tip.style.left=Math.min(e.clientX-box.left+14,box.width-250)+"px";tip.style.top=Math.max(0,e.clientY-box.top-20)+"px"};
   r.onmouseleave=()=>tip.style.display="none"})}
+function renderAlerts(W){
+ const crit=W.filter(w=>w.status==="crit"),warn=W.filter(w=>w.status==="warn"),watch=W.filter(w=>w.status==="watch"),A=$("alerts");
+ const lvl=crit.length?"crit":warn.length?"warn":"ok";A.className="card "+lvl;
+ const title=crit.length?`${crit.length} week${crit.length>1?"s cannot":" cannot"} be covered, even with flex capacity`:warn.length?`${warn.length} week${warn.length>1?"s need":" needs"} flex capacity`:"All weeks fit within standard capacity";
+ const sub=[crit.length&&`${f0(crit.reduce((a,w)=>a+w.needed-w.flex,0))} units unplanned`,warn.length&&`${warn.length} week${warn.length>1?"s":""} above standard capacity (${eur(W.reduce((a,w)=>a+w.costFlex,0))} flex cost)`,
+  watch.length&&`${watch.length} on watch (≥${Math.round(ASSUMPTIONS.watchUtil*100)}% of standard)`].filter(Boolean).join(" · ")||"No weeks above the watch threshold";
+ let h=`<div class="ah"><div><b>${lvl==="ok"?"✓ ":"⚠ "}${title}</b><small>${sub}</small></div></div>`;
+ W.filter(w=>w.status==="crit"||w.status==="warn").forEach(w=>{const c=w.status==="crit";
+  h+=`<div class="ai" data-w="${w.week}"><span class="pill ${w.status}">${c?"Shortfall":"Flex"}</span><b>W${w.week}</b>
+   <span>${c?`Needs <b>${f0(w.needed)}</b> vs flex ceiling ${f0(w.flex)} · <b class="over">${f0(w.needed-w.flex)} units short (${p1(w.needed/w.flex-1)} over)</b>`:`Needs <b>${f0(w.needed)}</b> vs standard ${f0(w.std)} · <b>${f0(w.needed-w.std)} units</b> via flex · +${eur(w.costFlex)}`}</span>
+   <em>${c?"Add capacity or move orders to another week":"Activate flex labour / extended shifts"}</em></div>`});
+ A.innerHTML=h;
+ A.querySelectorAll(".ai").forEach(r=>r.onmousedown=()=>{st.open.add(+r.dataset.w);render();document.querySelector(`tr.wk[data-w="${r.dataset.w}"]`).scrollIntoView({behavior:"smooth",block:"center"})})}
 function dayRows(w){ // illustrative Monday-Sunday split of the week
  const A=ASSUMPTIONS;return DAYS.map((d,i)=>{const needed=w.needed*A.dayDemand[i],std=w.std*A.dayStd[i],flex=w.flex*A.dayFlex[i];
   return{d,needed,std,flex,demand:w.demand*A.dayDemand[i],us:std?needed/std:null,uf:flex?needed/flex:null}})}
@@ -170,11 +195,12 @@ function render(){
   ["Total demand",f0(S("demand")),"Forecast in selected period"]].map(k=>`<div class="kpi"><span class="lab">${k[0]}</span><b>${k[1]}</b><span>${k[2]}</span></div>`).join("");
  $("legend").innerHTML=SER.map(s=>`<span><i style="background:${s[2]}"></i>${s[1]}</span>`).join("")+LINES.map(l=>`<span><u style="border-color:${l[2]};${l[3]?"border-top-style:dotted;border-top-width:3px":""}"></u>${l[1]}</span>`).join("");
  drawChart(W);
+ renderAlerts(W);
  const cell=(v,over)=>`<td${over?' class="over"':""}>${v}</td>`;
  let t=`<tr><th>Week</th><th>Daily profile</th>${["Capacity Needed (Units)","Standard capacity (Units)","Flex Capacity (Units)","Capacity Std Utilization","Capacity Flex Utilization","Standard Total Costs","Flex Total Cost","Demand (Units)"].map(h=>`<th>${h}</th>`).join("")}</tr>`;
  W.forEach(w=>{const d=dayRows(w),mxd=Math.max(...d.map(x=>x.needed)),isOpen=st.open.has(w.week);
   const prof=`<div class="prof${w.utilStd>1?" over":""}">${d.map((x,i)=>`<i class="${i>4?"we":""}" style="height:${Math.max(3,Math.round(x.needed/mxd*22))}px"></i>`).join("")}</div>`;
-  t+=`<tr class="wk${isOpen?" open":""}" data-w="${w.week}"><td><span class="chev">›</span> ${w.week}</td><td>${prof}</td>${cell(f0(w.needed))}${cell(f0(w.std))}${cell(f0(w.flex))}${cell(p1(w.utilStd),w.utilStd>1)}${cell(p1(w.utilFlex),w.utilFlex>1)}${cell(eur(w.costStd))}${cell(eur(w.costFlex),w.costFlex>0)}${cell(f0(w.demand))}</tr>`;
+  t+=`<tr class="wk${isOpen?" open":""}" data-w="${w.week}"><td><span class="chev">›</span> ${w.week}${w.status?`<span class="pill ${w.status}">${{crit:"Shortfall",warn:"Flex",watch:"Watch"}[w.status]}</span>`:""}</td><td>${prof}</td>${cell(f0(w.needed))}${cell(f0(w.std))}${cell(f0(w.flex))}${cell(p1(w.utilStd),w.utilStd>1)}${cell(p1(w.utilFlex),w.utilFlex>1)}${cell(eur(w.costStd))}${cell(eur(w.costFlex),w.costFlex>0)}${cell(f0(w.demand))}</tr>`;
   if(isOpen)d.forEach(x=>{t+=`<tr class="day"><td>${x.d}</td><td></td>${cell(f0(x.needed))}${cell(f0(x.std))}${cell(f0(x.flex))}${cell(x.us==null?"-":p1(x.us),x.us>1)}${cell(x.uf==null?"-":p1(x.uf),x.uf>1)}<td>-</td><td>-</td>${cell(f0(x.demand))}</tr>`})});
  t+=`<tr class="tot"><td>Total</td><td></td>${cell(f0(need))}${cell(f0(S("std")))}${cell(f0(S("flex")))}${cell(p1(need/S("std")))}${cell(p1(need/S("flex")))}${cell(eur(S("costStd")))}${cell(eur(S("costFlex")))}${cell(f0(S("demand")))}</tr>`;
  $("tbl").innerHTML=t;
